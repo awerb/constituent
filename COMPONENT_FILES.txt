@@ -1,0 +1,281 @@
+COMPLETE COMPONENT LIBRARY - FILE MANIFEST
+==========================================
+
+Project: constituent-response
+Framework: Next.js 14+ with App Router
+Styling: Tailwind CSS 3.4+
+UI Primitives: Radix UI
+Component Framework: shadcn/ui pattern
+
+DIRECTORY STRUCTURE
+===================
+
+src/components/
+├── ui/
+│   ├── accordion.tsx                 # Collapsible accordion component
+│   ├── avatar.tsx                    # Avatar with image/fallback
+│   ├── badge.tsx                     # Badge with 5 variants
+│   ├── button.tsx                    # Button with 6 variants, 4 sizes
+│   ├── card.tsx                      # Card + CardHeader/Title/Description/Content/Footer
+│   ├── checkbox.tsx                  # Checkbox with indicator
+│   ├── dialog.tsx                    # Modal dialog
+│   ├── dropdown-menu.tsx             # Context menu
+│   ├── input.tsx                     # Text input
+│   ├── label.tsx                     # Form label
+│   ├── popover.tsx                   # Floating popover
+│   ├── scroll-area.tsx               # Scrollable area with custom scrollbar
+│   ├── select.tsx                    # Select dropdown
+│   ├── separator.tsx                 # Divider line
+│   ├── skeleton.tsx                  # Loading skeleton
+│   ├── switch.tsx                    # Toggle switch
+│   ├── table.tsx                     # Table (Header/Body/Footer/Row/Cell)
+│   ├── tabs.tsx                      # Tab navigation
+│   ├── textarea.tsx                  # Multi-line input
+│   ├── toast.tsx                     # Toast notifications
+│   ├── tooltip.tsx                   # Floating tooltip
+│   └── index.ts                      # Barrel export file
+│
+├── layout/
+│   ├── Sidebar.tsx                   # Staff dashboard navigation sidebar
+│   ├── Header.tsx                    # Top header bar with controls
+│   ├── NotificationBell.tsx          # Notification bell widget
+│   ├── DashboardLayout.tsx           # Complete dashboard layout wrapper
+│   └── index.ts                      # Barrel export file
+│
+└── shared/
+    ├── LanguageSelector.tsx          # Language dropdown (8 languages)
+    ├── RefNumberDisplay.tsx          # Reference number display
+    └── index.ts                      # Barrel export file
+
+UI COMPONENTS (21 total)
+========================
+
+FORM COMPONENTS
+- button.tsx                - Button (6 variants: default, destructive, outline, secondary, ghost, link)
+                              Sizes: default, sm, lg, icon
+- input.tsx                 - Text input field
+- textarea.tsx              - Multi-line text area
+- label.tsx                 - Form label element
+- checkbox.tsx              - Checkbox with check icon indicator
+- switch.tsx                - Toggle switch component
+- select.tsx                - Select dropdown (with scroll support)
+- popover.tsx               - Floating popover container
+
+LAYOUT COMPONENTS
+- card.tsx                  - Card container
+                              Includes: CardHeader, CardTitle, CardDescription, CardContent, CardFooter
+- badge.tsx                 - Badge element (5 variants: default, secondary, destructive, outline, success, warning)
+- separator.tsx             - Divider line (horizontal/vertical)
+- scroll-area.tsx           - Scrollable container with custom scrollbar
+- table.tsx                 - Data table
+                              Includes: TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell
+- accordion.tsx             - Collapsible accordion
+                              Includes: AccordionItem, AccordionTrigger, AccordionContent
+
+DIALOG/MODAL COMPONENTS
+- dialog.tsx                - Modal dialog
+                              Includes: DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription
+- dropdown-menu.tsx         - Context menu/dropdown
+                              Includes: DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+                              DropdownMenuCheckboxItem, DropdownMenuRadioItem, etc.
+
+DISPLAY COMPONENTS
+- avatar.tsx                - Avatar image component
+                              Includes: AvatarImage, AvatarFallback
+- tabs.tsx                  - Tab navigation
+                              Includes: TabsList, TabsTrigger, TabsContent
+- tooltip.tsx               - Floating tooltip hint
+                              Includes: TooltipProvider, TooltipTrigger, TooltipContent
+- toast.tsx                 - Toast notification
+                              Includes: Toast, ToastTitle, ToastDescription, ToastAction, ToastClose
+- skeleton.tsx              - Loading skeleton placeholder
+
+LAYOUT COMPONENTS (4 total)
+===========================
+
+1. Sidebar.tsx
+   - Collapsible sidebar navigation (64px collapsed, 256px expanded)
+   - 7 navigation items: Dashboard, Inbox, Cases, Constituents, Templates, Knowledge Base, Reports
+   - City logo/name display at top
+   - Toggle button at bottom
+   - Active state styling (blue-600 background)
+   - Tooltip hints in collapsed mode
+   - Dark mode support
+   - Responsive collapse on mobile
+   - Uses lucide-react icons
+   - Features: useState hook, usePathname for active states, useCallback for toggle
+
+2. Header.tsx
+   - Sticky top header (z-50)
+   - Page title on left
+   - Controls on right:
+     * NotificationBell widget
+     * Dark mode toggle (Moon/Sun icons)
+     * User profile dropdown (Avatar + dropdown menu)
+   - User dropdown options: Profile, Notifications, Sign out
+   - Responsive layout
+   - Uses next-themes for dark mode
+   - Props: title, userName, userEmail, userAvatar, callbacks
+
+3. NotificationBell.tsx
+   - Bell icon with red unread badge
+   - Dropdown menu with notifications
+   - Features:
+     * Unread count display (9+)
+     * Notification list with timestamps
+     * Read/unread state indicators
+     * "Mark all as read" link
+     * Individual notification dismiss buttons
+     * Time formatting (just now, 1m ago, 1h ago, 1d ago)
+   - Customizable notification interface
+   - onClick and onDismiss callbacks
+
+4. DashboardLayout.tsx
+   - Complete dashboard wrapper combining Sidebar + Header
+   - Flex layout with proper spacing
+   - Sidebar left (fixed positioning)
+   - Main content area with Header + scrollable content
+   - Props: title, children, user details, city info, callbacks
+   - Ready-to-use for page layouts
+
+SHARED COMPONENTS (2 total)
+===========================
+
+1. LanguageSelector.tsx
+   - Dropdown menu with language selection
+   - 8 supported languages with flag emojis:
+     * English (🇺🇸)
+     * Español (🇪🇸)
+     * Français (🇫🇷)
+     * Português (🇵🇹)
+     * 中文 (🇨🇳)
+     * Tiếng Việt (🇻🇳)
+     * 한국어 (🇰🇷)
+     * العربية (🇸🇦)
+   - Compact mode option
+   - onChange callback
+   - Uses Globe icon in compact mode
+
+2. RefNumberDisplay.tsx
+   - Displays formatted reference number (e.g., CR-2024-00147)
+   - Features:
+     * Monospace font display
+     * Copy-to-clipboard button
+     * Visual feedback on copy (Check icon, 2s duration)
+     * Optional case link (as Next.js Link)
+     * Muted background styling
+   - Customizable className
+   - Uses Copy/Check icons from lucide-react
+
+EXPORT FILES
+============
+
+src/components/ui/index.ts
+   - Exports all 21 UI components and types
+   - Named exports for easy importing
+   - Example: import { Button, Card, Dialog } from '@/components/ui'
+
+src/components/layout/index.ts
+   - Exports: Sidebar, Header, NotificationBell, DashboardLayout
+   - Example: import { DashboardLayout } from '@/components/layout'
+
+src/components/shared/index.ts
+   - Exports: LanguageSelector, RefNumberDisplay
+   - Example: import { LanguageSelector } from '@/components/shared'
+
+KEY FEATURES
+============
+
+✓ TypeScript - Full type support with proper generics and interfaces
+✓ React 19 - Latest React with proper hooks
+✓ Radix UI - Accessibility built-in (ARIA, keyboard nav, screen readers)
+✓ CVA - Class-variance-authority for type-safe variant styling
+✓ Tailwind CSS - Utility-first styling with dark mode support
+✓ Next.js - App Router compatible, uses next/link and next-themes
+✓ "use client" - Proper client component directives where needed
+✓ forwardRef - All components properly forwarded for ref access
+✓ Responsive - Mobile-first responsive design
+✓ Dark Mode - CSS variable-based dark mode with class strategy
+✓ Accessibility - WCAG 2.1 compliant, keyboard navigation
+✓ Performance - Optimized re-renders, memoization where needed
+✓ No Placeholders - All code is production-ready, no TODOs
+
+DEPENDENCIES USED
+=================
+
+From package.json (already installed):
+- @radix-ui/* - Accessibility primitives
+- class-variance-authority - Type-safe variants
+- clsx, tailwind-merge - Utility functions
+- lucide-react - Icon library
+- tailwindcss - Styling framework
+- next-themes - Dark mode support
+- next - App router framework
+
+USAGE PATTERNS
+==============
+
+1. Import and use in page/component:
+
+   import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
+   import { DashboardLayout } from '@/components/layout'
+
+   export default function MyPage() {
+     return (
+       <DashboardLayout title="My Page" userName="John">
+         <Card>
+           <CardHeader>
+             <CardTitle>Title</CardTitle>
+           </CardHeader>
+           <CardContent>
+             <Button>Click me</Button>
+           </CardContent>
+         </Card>
+       </DashboardLayout>
+     )
+   }
+
+2. TypeScript with component props:
+
+   import type { ButtonProps } from '@/components/ui'
+
+   function MyButton(props: ButtonProps & { custom?: string }) {
+     return <Button {...props} />
+   }
+
+3. Dark mode toggle:
+
+   - Header component includes Moon/Sun toggle
+   - Uses next-themes useTheme hook
+   - Automatically managed
+
+TESTING THE COMPONENTS
+======================
+
+1. Build: npm run build
+2. Dev: npm run dev
+3. Check for TypeScript errors: npx tsc --noEmit
+
+All components are production-ready and can be used immediately.
+
+DOCUMENTATION
+==============
+
+See COMPONENTS.md in project root for:
+- Detailed component documentation
+- Usage examples
+- Props interfaces
+- Styling guide
+- Accessibility features
+- Browser support
+
+FILE SIZES
+==========
+
+Total UI components: ~30 KB
+Total layout components: ~15 KB
+Total shared components: ~5 KB
+Documentation: ~10 KB
+
+All files follow Next.js 14 best practices and shadcn/ui conventions.
+Ready for immediate integration into the constituent-response project.

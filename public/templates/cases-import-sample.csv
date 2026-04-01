@@ -1,0 +1,6 @@
+subject,description,constituentEmail,status,department,date
+Pothole on Main Street,Large pothole at intersection causing traffic hazards and vehicle damage,john.smith@example.com,NEW,Public Works,2024-03-15
+Street Light Outage,Street light at corner of Main and Oak is broken and has been out for one week,jane.doe@example.com,IN_PROGRESS,Public Works,2024-03-14
+Park Maintenance Needed,Central park requires cleanup and maintenance of walking paths,bob.johnson@example.com,NEW,Parks & Recreation,2024-03-13
+Zoning Variance Question,Question about commercial zoning requirements for property at 123 Oak,alice.williams@example.com,RESOLVED,Planning & Development,2024-03-10
+Library Hours Request,Request to extend library hours on weekends to better serve working families,charlie.brown@example.com,NEW,Libraries,2024-03-12

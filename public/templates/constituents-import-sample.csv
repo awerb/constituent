@@ -1,0 +1,6 @@
+name,email,phone,address,ward
+John Smith,john.smith@example.com,(555) 123-4567,123 Main Street,Ward 1
+Jane Doe,jane.doe@example.com,(555) 234-5678,456 Oak Avenue,Ward 2
+Bob Johnson,bob.johnson@example.com,(555) 345-6789,789 Elm Street,Ward 3
+Alice Williams,alice.williams@example.com,(555) 456-7890,321 Pine Road,Ward 1
+Charlie Brown,charlie.brown@example.com,(555) 567-8901,654 Maple Lane,Ward 2

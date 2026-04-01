@@ -1,0 +1,268 @@
+# Deployment Scripts - Quick Start Guide
+
+## Installation
+
+All scripts are located in the `scripts/` directory and are executable.
+
+```bash
+cd /path/to/constituent-response
+ls -la scripts/
+```
+
+## Script Commands
+
+### 1. Initial Setup
+
+```bash
+./scripts/setup.sh
+```
+
+Performs complete first-time setup:
+1. Checks Docker installation
+2. Creates and configures .env file
+3. Generates NEXTAUTH_SECRET
+4. Starts Docker containers
+5. Runs database migrations
+6. Seeds initial data
+7. Displays application URL
+
+After completion, app runs at `http://localhost:3000`
+
+---
+
+### 2. Create Database Backup
+
+```bash
+# Simple backup
+./scripts/backup.sh
+
+# Backup to specific directory
+./scripts/backup.sh /var/backups/constituent-response
+
+# Help
+./scripts/backup.sh --help
+```
+
+Output: Compressed SQL backup with timestamp
+- Format: `constituent_response_backup_YYYYMMDD_HHMMSS.sql.gz`
+- Auto-deletes backups older than 7 days
+- Suitable for cron scheduling
+
+---
+
+### 3. Provision New Tenant
+
+```bash
+# Interactive mode
+./scripts/provision-tenant.sh
+
+# With arguments
+./scripts/provision-tenant.sh \
+  --name "Springfield" \
+  --slug "springfield" \
+  --state "IL" \
+  --timezone "America/Chicago" \
+  --admin-email "admin@springfield.gov"
+
+# Help
+./scripts/provision-tenant.sh --help
+```
+
+Output:
+- Tenant ID
+- Webhook URL for integration
+- Webhook secret
+- Admin invite token (if email provided)
+
+---
+
+## Common Tasks
+
+### Deploy and Run Application
+
+```bash
+# 1. Run setup (one-time)
+./scripts/setup.sh
+
+# 2. Application is ready at http://localhost:3000
+```
+
+### Set Up Automated Backups
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line (backup daily at 2 AM):
+0 2 * * * /path/to/constituent-response/scripts/backup.sh /var/backups/constituent-response
+```
+
+### Provision Multiple Cities
+
+```bash
+# Create cities one by one
+./scripts/provision-tenant.sh --name "Springfield" --slug "springfield" --state "IL" --timezone "America/Chicago"
+./scripts/provision-tenant.sh --name "Shelbyville" --slug "shelbyville" --state "OH" --timezone "America/New_York"
+./scripts/provision-tenant.sh --name "Capital City" --slug "capital-city" --state "CA" --timezone "America/Los_Angeles"
+```
+
+### Restore from Backup
+
+```bash
+# List available backups
+ls -la /var/backups/constituent-response/
+
+# Restore (replace BACKUP_FILE with actual filename)
+gunzip < /var/backups/constituent-response/BACKUP_FILE.sql.gz | \
+  docker-compose exec -T postgres psql -U postgres constituent_response
+```
+
+### View Logs
+
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f app
+docker-compose logs -f postgres
+docker-compose logs -f redis
+docker-compose logs -f worker
+```
+
+### Stop/Start Services
+
+```bash
+# Stop all services
+docker-compose down
+
+# Start all services
+docker-compose up -d
+
+# Restart specific service
+docker-compose restart app
+```
+
+---
+
+## Script Options
+
+### setup.sh
+```
+--no-interactive    Skip prompts (use defaults)
+-h, --help         Show help
+```
+
+### backup.sh
+```
+OUTPUT_DIRECTORY   Directory to save backup (optional)
+--help            Show help
+```
+
+### provision-tenant.sh
+```
+--name TEXT            Tenant name (required)
+--slug TEXT            Tenant slug (required)
+--state CODE           State code: AL, AK, AZ, ... (required)
+--timezone TZ          Timezone: America/Chicago, etc. (required)
+--admin-email EMAIL    Admin email (optional)
+--help                Show help
+```
+
+---
+
+## File Locations
+
+```
+project-root/
+├── scripts/
+│   ├── setup.sh                 # Initial setup
+│   ├── backup.sh                # Database backups
+│   └── provision-tenant.sh      # Tenant provisioning
+├── .env                         # Configuration (created by setup.sh)
+├── .env.example                 # Configuration template
+├── docker-compose.yml           # Container definitions
+├── Dockerfile                   # Application image
+└── DEPLOYMENT_SCRIPTS.md        # Full documentation
+```
+
+---
+
+## Troubleshooting
+
+### "Docker is not installed"
+```bash
+# Install Docker: https://docs.docker.com/get-docker/
+# Install Docker Compose: https://docs.docker.com/compose/install/
+```
+
+### "PostgreSQL did not become healthy"
+```bash
+# Check if port 5432 is available
+lsof -i :5432
+
+# Check logs
+docker-compose logs postgres
+
+# Reset database
+docker-compose down -v
+docker-compose up -d postgres redis
+```
+
+### "Failed to create database backup"
+```bash
+# Ensure database is running
+docker-compose ps postgres
+
+# Check disk space
+df -h /var/backups/
+
+# Verify directory is writable
+touch /var/backups/constituent-response/test.txt && rm test.txt
+```
+
+### "Tenant with slug already exists"
+Choose a different slug name (must be unique)
+
+---
+
+## Environment Variables
+
+Key variables in `.env`:
+
+```
+DATABASE_URL=postgresql://user:password@postgres:5432/constituent_response
+REDIS_URL=redis://:password@redis:6379
+NEXTAUTH_SECRET=<auto-generated>
+NEXTAUTH_URL=http://localhost:3000
+AI_PROVIDER=openai|anthropic
+DEPLOYMENT_MODE=single-tenant|multi-tenant
+```
+
+Edit `.env` to change configuration after initial setup.
+
+---
+
+## Next Steps
+
+1. Run `./scripts/setup.sh` to deploy application
+2. Access application at http://localhost:3000
+3. Create admin account
+4. For multi-tenant: `./scripts/provision-tenant.sh` to add cities
+5. Set up backup cron: `crontab -e`
+6. Configure Townhall webhook using URL from provisioning script
+
+---
+
+## Getting Help
+
+```bash
+# Help for any script
+./scripts/setup.sh --help
+./scripts/backup.sh --help
+./scripts/provision-tenant.sh --help
+
+# Full documentation
+cat DEPLOYMENT_SCRIPTS.md
+```
+

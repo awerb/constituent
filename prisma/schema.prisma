@@ -1,0 +1,414 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  AGENT
+  ELECTED_OFFICIAL
+}
+
+enum CaseStatus {
+  NEW
+  ASSIGNED
+  IN_PROGRESS
+  AWAITING_RESPONSE
+  RESOLVED
+  CLOSED
+}
+
+enum CasePriority {
+  URGENT
+  HIGH
+  NORMAL
+  LOW
+}
+
+enum CaseSource {
+  NEWSLETTER_FLAG
+  WEB_FORM
+  EMAIL
+  PHONE
+  WALK_IN
+  MAIL
+  MANUAL
+}
+
+enum SignalType {
+  FLAG
+  APPLAUD
+}
+
+enum TemplateStatus {
+  DRAFT
+  APPROVED
+  ARCHIVED
+}
+
+enum PrivacyStatus {
+  ACTIVE
+  EXPORT_REQUESTED
+  DELETION_REQUESTED
+  ANONYMIZED
+}
+
+enum AuthorType {
+  CONSTITUENT
+  STAFF
+  SYSTEM
+}
+
+// Models
+model City {
+  id                           String   @id @default(cuid())
+  name                         String
+  slug                         String   @unique
+  state                        String
+  timezone                     String
+  transparentCityApiKey        String?
+  transparentCityWebhookSecret String?
+  settings                     Json
+  isActive                     Boolean  @default(true)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  // Relations
+  constituents      Constituent[]
+  departments       Department[]
+  users             User[]
+  cases             Case[]
+  newsletterItems   NewsletterItem[]
+  newsletterSignals NewsletterSignal[]
+  templates         Template[]
+  slaConfigs        SlaConfig[]
+  kbArticles        KbArticle[]
+  webhooks          Webhook[]
+  auditLogs         AuditLog[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Constituent {
+  id                 String   @id @default(cuid())
+  cityId             String
+  email              String
+  name               String?
+  phone              String?
+  address            String?
+  ward               String?
+  district           String?
+  languagePreference String   @default("en")
+  privacyStatus      PrivacyStatus @default(ACTIVE)
+  metadata           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  city               City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  cases              Case[]
+  newsletterSignals  NewsletterSignal[]
+  caseMessages       CaseMessage[]
+
+  @@unique([cityId, email])
+  @@index([cityId])
+  @@index([email])
+  @@index([privacyStatus])
+  @@index([createdAt])
+}
+
+model Department {
+  id               String   @id @default(cuid())
+  cityId           String
+  name             String
+  slug             String
+  description      String?
+  topicTags        String[]
+  defaultSlaHours  Int      @default(48)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  city             City          @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  cases            Case[]
+  users            User[]
+  templates        Template[]
+  slaConfigs       SlaConfig[]
+  kbArticles       KbArticle[]
+
+  @@unique([cityId, slug])
+  @@index([cityId])
+  @@index([isActive])
+}
+
+model User {
+  id                       String   @id @default(cuid())
+  cityId                   String
+  email                    String
+  name                     String
+  passwordHash             String?
+  role                     Role
+  departmentId             String?
+  ward                     String?
+  notificationPreferences  Json     @default("{}")
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  // Relations
+  city                     City           @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  department               Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assignedCases            Case[]         @relation("assignedTo")
+  createdTemplates         Template[]     @relation("createdBy")
+  approvedTemplates        Template[]     @relation("approvedBy")
+  createdKbArticles        KbArticle[]    @relation("createdBy")
+  auditLogs                AuditLog[]
+
+  @@unique([cityId, email])
+  @@index([cityId])
+  @@index([email])
+  @@index([role])
+  @@index([departmentId])
+  @@index([isActive])
+}
+
+model Case {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  referenceNumber         String   @unique
+  constituentId           String
+  subject                 String
+  description             String   @db.Text
+  status                  CaseStatus @default(NEW)
+  priority                CasePriority @default(NORMAL)
+  source                  CaseSource
+  departmentId            String
+  assignedToId            String?
+  newsletterItemId        String?
+  transparentCityContext  Json?
+  detectedLanguage        String?
+  slaDeadline             DateTime?
+  slaBreached             Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  firstRespondedAt        DateTime?
+  resolvedAt              DateTime?
+  closedAt                DateTime?
+
+  // Relations
+  city                    City             @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  constituent             Constituent      @relation(fields: [constituentId], references: [id], onDelete: Cascade)
+  department              Department       @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  assignedTo              User?            @relation("assignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  newsletterItem          NewsletterItem?  @relation(fields: [newsletterItemId], references: [id], onDelete: SetNull)
+  messages                CaseMessage[]
+  newsletterSignals       NewsletterSignal[]
+
+  @@index([cityId])
+  @@index([referenceNumber])
+  @@index([constituentId])
+  @@index([status])
+  @@index([priority])
+  @@index([departmentId])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@index([slaDeadline])
+  @@index([slaBreached])
+}
+
+model CaseMessage {
+  id                      String   @id @default(cuid())
+  caseId                  String
+  authorType              AuthorType
+  authorId                String
+  content                 String   @db.Text
+  contentLanguage         String?
+  isInternalNote          Boolean  @default(false)
+  isPublicRecordsExcluded Boolean  @default(false)
+  attachments             Json?
+  createdAt               DateTime @default(now())
+
+  // Relations
+  case                    Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([authorType])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model NewsletterItem {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  externalId              String
+  title                   String
+  summary                 String   @db.Text
+  topicTags               String[]
+  sourceUrl               String
+  transparentCityDataUrl  String
+  flagCount               Int      @default(0)
+  applaudCount            Int      @default(0)
+  publishedAt             DateTime
+  createdAt               DateTime @default(now())
+
+  // Relations
+  city                    City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  signals                 NewsletterSignal[]
+  cases                   Case[]
+
+  @@unique([cityId, externalId])
+  @@index([cityId])
+  @@index([publishedAt])
+}
+
+model NewsletterSignal {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  newsletterItemId        String
+  constituentId           String
+  signalType              SignalType
+  note                    String?  @db.Text
+  noteLanguage            String?
+  caseId                  String?
+  createdAt               DateTime @default(now())
+
+  // Relations
+  city                    City             @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  newsletterItem          NewsletterItem   @relation(fields: [newsletterItemId], references: [id], onDelete: Cascade)
+  constituent             Constituent      @relation(fields: [constituentId], references: [id], onDelete: Cascade)
+  case                    Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@unique([newsletterItemId, constituentId, signalType])
+  @@index([cityId])
+  @@index([newsletterItemId])
+  @@index([constituentId])
+  @@index([signalType])
+}
+
+model Template {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  title                   String
+  category                String
+  departmentId            String?
+  content                 String   @db.Text
+  variables               Json
+  status                  TemplateStatus @default(DRAFT)
+  createdById             String
+  approvedById            String?
+  version                 Int      @default(1)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  city                    City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  department              Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdBy               User        @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)
+  approvedBy              User?       @relation("approvedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([cityId])
+  @@index([status])
+  @@index([departmentId])
+  @@index([createdById])
+}
+
+model SlaConfig {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  departmentId            String
+  priority                CasePriority
+  responseHours           Int
+  resolutionHours         Int
+  escalationChain         Json
+  businessHoursStart      String   @default("08:00")
+  businessHoursEnd        String   @default("17:00")
+  businessDays            String[]
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  city                    City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  department              Department  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([cityId, departmentId, priority])
+  @@index([cityId])
+  @@index([departmentId])
+}
+
+model KbArticle {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  title                   String
+  content                 String   @db.Text
+  category                String
+  departmentId            String?
+  createdById             String
+  useCount                Int      @default(0)
+  isPublished             Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  city                    City        @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  department              Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdBy               User        @relation("createdBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([cityId])
+  @@index([isPublished])
+  @@index([departmentId])
+}
+
+model Webhook {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  name                    String
+  url                     String
+  events                  String[]
+  secret                  String
+  isActive                Boolean  @default(true)
+  lastTriggeredAt         DateTime?
+  failureCount            Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  city                    City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@index([cityId])
+  @@index([isActive])
+}
+
+model AuditLog {
+  id                      String   @id @default(cuid())
+  cityId                  String
+  userId                  String?
+  action                  String
+  resourceType            String
+  resourceId              String
+  details                 Json?
+  ipAddress               String?
+  createdAt               DateTime @default(now())
+
+  // Relations
+  city                    City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  user                    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([cityId])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+}
