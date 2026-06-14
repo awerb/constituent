@@ -34,7 +34,7 @@ export default function InboxPage() {
   );
 
   // Get other viewers for collision detection
-  const viewersQuery = trpc.cases.getViewing.useQuery(undefined, {
+  const viewersQuery = trpc.cases.getViewers.useQuery(undefined, {
     staleTime: 30 * 1000,
   });
 
@@ -76,8 +76,8 @@ export default function InboxPage() {
   }, []);
 
   const handleSelectAll = useCallback((selected: boolean) => {
-    if (selected && casesQuery.data?.data) {
-      setSelectedIds(new Set(casesQuery.data.data.map((c) => c.id)));
+    if (selected && casesQuery.data?.cases) {
+      setSelectedIds(new Set(casesQuery.data.cases.map((c) => c.id)));
     } else {
       setSelectedIds(new Set());
     }
@@ -107,8 +107,40 @@ export default function InboxPage() {
     );
   }
 
-  const cases = casesQuery.data?.data || [];
-  const viewers = viewersQuery.data || [];
+  const rawCases = casesQuery.data?.cases || [];
+  const rawViewers = viewersQuery.data?.viewers || [];
+
+  const sourceMap: Record<
+    string,
+    "NEWSLETTER" | "WEB" | "EMAIL" | "PHONE" | "MAIL"
+  > = {
+    NEWSLETTER_FLAG: "NEWSLETTER",
+    WEB_FORM: "WEB",
+    EMAIL: "EMAIL",
+    PHONE: "PHONE",
+    WALK_IN: "MAIL",
+    MAIL: "MAIL",
+    MANUAL: "MAIL",
+  };
+
+  const cases = rawCases.map((c) => ({
+    id: c.id,
+    referenceNumber: c.referenceNumber,
+    source: sourceMap[c.source] ?? "WEB",
+    constituentName: c.constituent?.name ?? c.constituent?.email ?? "Unknown",
+    subject: c.subject,
+    priority: c.priority,
+    status: c.status,
+    slaDeadline: c.slaDeadline ?? new Date(),
+    slaBreached: c.slaBreached,
+    assignedTo: c.assignedTo
+      ? { id: c.assignedTo.id, name: c.assignedTo.name }
+      : null,
+    lastMessagePreview: c.description ?? "",
+    updatedAt: c.updatedAt,
+  }));
+
+  const viewers = rawViewers.map((id) => ({ id, name: id }));
 
   return (
     <div className="space-y-6">

@@ -16,7 +16,14 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { NotificationBell } from '@/components/layout/NotificationBell'
 
 interface HeaderProps {
-  title: string
+  title?: string
+  user?: {
+    id?: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    role?: string
+  }
   userName?: string
   userEmail?: string
   userAvatar?: string
@@ -25,11 +32,12 @@ interface HeaderProps {
   onSignOut?: () => void
 }
 
-export const Header = React.forwardRef<HTMLHeaderElement, HeaderProps>(
+export const Header = React.forwardRef<HTMLElement, HeaderProps>(
   (
     {
-      title,
-      userName = 'User',
+      title = '',
+      user,
+      userName,
       userEmail,
       userAvatar,
       onProfileClick,
@@ -40,11 +48,15 @@ export const Header = React.forwardRef<HTMLHeaderElement, HeaderProps>(
   ) => {
     const { theme, setTheme } = useTheme()
 
+    const resolvedUserName = userName ?? user?.name ?? 'User'
+    const resolvedUserEmail = userEmail ?? user?.email ?? undefined
+    const resolvedUserAvatar = userAvatar ?? user?.image ?? undefined
+
     const handleThemeToggle = () => {
       setTheme(theme === 'dark' ? 'light' : 'dark')
     }
 
-    const userInitials = userName
+    const userInitials = resolvedUserName
       .split(' ')
       .map((n) => n[0])
       .join('')
@@ -84,16 +96,18 @@ export const Header = React.forwardRef<HTMLHeaderElement, HeaderProps>(
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                   <Avatar className="h-10 w-10">
-                    {userAvatar && <AvatarImage src={userAvatar} alt={userName} />}
+                    {resolvedUserAvatar && (
+                      <AvatarImage src={resolvedUserAvatar} alt={resolvedUserName} />
+                    )}
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userName}</p>
-                  {userEmail && (
-                    <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+                  <p className="text-sm font-medium leading-none">{resolvedUserName}</p>
+                  {resolvedUserEmail && (
+                    <p className="text-xs leading-none text-muted-foreground">{resolvedUserEmail}</p>
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

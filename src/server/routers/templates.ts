@@ -5,8 +5,12 @@ import { TRPCError } from "@trpc/server";
 
 const listSchema = z.object({
   departmentId: z.string().optional(),
+  department: z.string().optional(),
   category: z.string().optional(),
-  status: z.nativeEnum(TemplateStatus).optional(),
+  status: z.union([z.nativeEnum(TemplateStatus), z.string()]).optional(),
+  search: z.string().optional(),
+  limit: z.number().int().positive().max(500).optional(),
+  offset: z.number().int().nonnegative().optional(),
 });
 
 const getByIdSchema = z.object({
@@ -49,9 +53,16 @@ export const templatesRouter = router({
       cityId: ctx.cityId,
     };
 
-    if (input.departmentId) where.departmentId = input.departmentId;
+    const departmentId = input.departmentId || input.department;
+    if (departmentId) where.departmentId = departmentId;
     if (input.category) where.category = input.category;
-    if (input.status) where.status = input.status;
+    if (input.status) where.status = input.status as TemplateStatus;
+    if (input.search) {
+      where.OR = [
+        { title: { contains: input.search, mode: "insensitive" } },
+        { content: { contains: input.search, mode: "insensitive" } },
+      ];
+    }
 
     const templates = await ctx.prisma.template.findMany({
       where,
@@ -61,6 +72,8 @@ export const templatesRouter = router({
         department: true,
       },
       orderBy: { createdAt: "desc" },
+      ...(input.limit !== undefined ? { take: input.limit } : {}),
+      ...(input.offset !== undefined ? { skip: input.offset } : {}),
     });
 
     return templates;

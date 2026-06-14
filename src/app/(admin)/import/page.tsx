@@ -696,10 +696,5 @@ Errors: ${results.errors.length}
     );
   }
 
-  // Default: Show upload step after type is selected
-  if (importType && step === "select") {
-    setStep("upload");
-  }
-
   return null;
 }

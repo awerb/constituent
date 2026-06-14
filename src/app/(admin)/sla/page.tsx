@@ -18,7 +18,7 @@ import { Plus, Edit2, Trash2, Clock } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function SLAPage() {
-  const slaQuery = trpc.admin.getSLAConfig.useQuery(undefined, {
+  const slaQuery = trpc.admin.getSlaConfigs.useQuery(undefined, {
     staleTime: 60 * 1000,
   });
 

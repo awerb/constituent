@@ -104,7 +104,7 @@ export async function processWebhookDelivery(
       method: "POST",
       headers,
       body,
-      timeout: 30000, // 30 second timeout
+      signal: AbortSignal.timeout(30000), // 30 second timeout
     });
 
     if (!response.ok) {
@@ -128,7 +128,7 @@ export async function processWebhookDelivery(
 
     // Update failure count
     const webhook = await prisma.webhook.findUnique({
-      where: { webhookId },
+      where: { id: webhookId },
     });
 
     if (webhook) {
@@ -256,7 +256,7 @@ export async function testWebhook(webhookId: string): Promise<boolean> {
       method: "POST",
       headers,
       body: JSON.stringify(testPayload),
-      timeout: 30000,
+      signal: AbortSignal.timeout(30000),
     });
 
     const success = response.ok;

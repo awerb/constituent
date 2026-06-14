@@ -76,7 +76,7 @@ export default function TemplatesPage() {
     );
   }
 
-  const templates = templatesQuery.data?.data || [];
+  const templates = templatesQuery.data || [];
 
   return (
     <div className="space-y-6">

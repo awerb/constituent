@@ -12,10 +12,9 @@ export default function DashboardPage() {
   const statsQuery = trpc.dashboard.getStats.useQuery(undefined, {
     staleTime: 60 * 1000,
   });
-  const myCasesQuery = trpc.dashboard.getMyCases.useQuery(
-    { limit: 10 },
-    { staleTime: 60 * 1000 }
-  );
+  const myCasesQuery = trpc.dashboard.getMyCases.useQuery(undefined, {
+    staleTime: 60 * 1000,
+  });
   const activitiesQuery = trpc.dashboard.getActivityFeed.useQuery(
     { limit: 20 },
     { staleTime: 60 * 1000 }
@@ -82,6 +81,42 @@ export default function DashboardPage() {
     );
   }
 
+  const myCases = (myCasesQuery.data || []).map((c) => ({
+    id: c.id,
+    referenceNumber: c.referenceNumber,
+    subject: c.subject,
+    priority: c.priority,
+    status: c.status,
+    slaDeadline: c.slaDeadline ?? new Date(),
+    slaBreached: c.slaBreached,
+    updatedAt: c.updatedAt,
+    constituentName: c.constituent?.name ?? c.constituent?.email ?? "Unknown",
+  }));
+
+  const activityActionMap: Record<
+    string,
+    | "case.created"
+    | "case.assigned"
+    | "response.sent"
+    | "case.resolved"
+    | "case.status_changed"
+    | "case.priority_changed"
+  > = {
+    CREATE: "case.created",
+    ASSIGN: "case.assigned",
+    RESPOND: "response.sent",
+    RESOLVE: "case.resolved",
+    UPDATE: "case.status_changed",
+  };
+
+  const activities = (activitiesQuery.data || []).map((a) => ({
+    id: a.id,
+    action: activityActionMap[a.action] ?? "case.status_changed",
+    userName: a.userName,
+    caseRef: a.resourceId,
+    timestamp: a.timestamp,
+  }));
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -97,9 +132,9 @@ export default function DashboardPage() {
         <section>
           <StatsCards
             openCases={statsQuery.data.openCases}
-            dueToday={statsQuery.data.dueToday}
-            avgResponseTime={statsQuery.data.avgResponseTime}
-            newsletterFlags={statsQuery.data.newsletterFlags}
+            dueToday={statsQuery.data.casesProcessedToday}
+            avgResponseTime={statsQuery.data.avgResponseTimeHours}
+            newsletterFlags={statsQuery.data.newsletterFlagsThisWeek}
           />
         </section>
       )}
@@ -120,10 +155,10 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* My Cases */}
-          {myCasesQuery.data && <MyCases cases={myCasesQuery.data} />}
+          {myCasesQuery.data && <MyCases cases={myCases} />}
 
           {/* Activity Feed */}
-          {activitiesQuery.data && <ActivityFeed activities={activitiesQuery.data} />}
+          {activitiesQuery.data && <ActivityFeed activities={activities} />}
         </div>
 
         {/* Right Column - Quick Actions */}

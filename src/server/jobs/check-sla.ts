@@ -60,10 +60,7 @@ export function createCheckSlaWorker() {
       }
     },
     {
-      settings: {
-        lockDuration: 300000, // 5 minute lock for SLA check
-        lockRenewTime: 150000, // Renew every 2.5 minutes
-      },
+      lockDuration: 300000, // 5 minute lock for SLA check
     }
   );
 }

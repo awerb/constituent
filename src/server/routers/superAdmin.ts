@@ -21,8 +21,27 @@ const getTenantStatsSchema = z.object({
 });
 
 export const superAdminRouter = router({
-  listTenants: superAdminProcedure.query(async ({ ctx }) => {
+  listTenants: superAdminProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().positive().max(500).optional(),
+          offset: z.number().int().nonnegative().optional(),
+          search: z.string().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+    const where: any = {};
+    if (input?.search) {
+      where.OR = [
+        { name: { contains: input.search, mode: "insensitive" } },
+        { slug: { contains: input.search, mode: "insensitive" } },
+      ];
+    }
+
     const cities = await ctx.prisma.city.findMany({
+      where,
       select: {
         id: true,
         name: true,
@@ -41,6 +60,8 @@ export const superAdminRouter = router({
         },
       },
       orderBy: { createdAt: "desc" },
+      ...(input?.limit !== undefined ? { take: input.limit } : {}),
+      ...(input?.offset !== undefined ? { skip: input.offset } : {}),
     });
 
     return cities.map((city) => ({
@@ -109,7 +130,9 @@ export const superAdminRouter = router({
       if (input.isActive !== undefined) updateData.isActive = input.isActive;
       if (input.settings !== undefined) {
         updateData.settings = {
-          ...existing.settings,
+          ...(typeof existing.settings === "object" && existing.settings !== null
+            ? existing.settings
+            : {}),
           ...input.settings,
         };
       }

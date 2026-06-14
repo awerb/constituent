@@ -8,7 +8,7 @@ export const dashboardRouter = router({
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [openCases, casesProcessedToday, avgResponseTime, flags] = await Promise.all([
+    const [openCases, casesProcessedToday, respondedCases, newsletterFlagsThisWeek] = await Promise.all([
       ctx.prisma.case.count({
         where: {
           cityId: ctx.cityId,
@@ -42,19 +42,19 @@ export const dashboardRouter = router({
     ]);
 
     let avgResponseTimeHours = 0;
-    if (flags.length > 0) {
-      const totalMs = flags.reduce((sum, c) => {
+    if (respondedCases.length > 0) {
+      const totalMs = respondedCases.reduce((sum, c) => {
         const diff = (c.firstRespondedAt!.getTime() - c.createdAt.getTime()) / 1000 / 60 / 60;
         return sum + diff;
       }, 0);
-      avgResponseTimeHours = Math.round((totalMs / flags.length) * 10) / 10;
+      avgResponseTimeHours = Math.round((totalMs / respondedCases.length) * 10) / 10;
     }
 
     return {
       openCases,
       casesProcessedToday,
       avgResponseTimeHours,
-      newsletterFlagsThisWeek: flags,
+      newsletterFlagsThisWeek,
     };
   }),
 

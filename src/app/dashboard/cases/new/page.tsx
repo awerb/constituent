@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { CasePriority, CaseSource } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,9 +59,9 @@ export default function NewCasePage() {
         constituentPhone: formData.constituentPhone || undefined,
         subject: formData.subject,
         description: formData.description,
-        priority: formData.priority as any,
+        priority: formData.priority as CasePriority,
         departmentId: formData.departmentId || undefined,
-        source: formData.source as any,
+        source: formData.source as CaseSource,
       });
 
       router.push(`/dashboard/cases/${result.id}`);

@@ -1,17 +1,24 @@
 import { z } from "zod";
-import { router, protectedProcedure, managerProcedure } from "@/server/trpc";
-import { CaseStatus, CasePriority, AuthorType, CaseSource } from "@prisma/client";
+import { router, protectedProcedure, managerProcedure, publicProcedure } from "@/server/trpc";
+import { CaseStatus, CasePriority, AuthorType, CaseSource, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 
 const caseFilterSchema = z.object({
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().max(100).optional().default(20),
-  status: z.nativeEnum(CaseStatus).optional(),
-  priority: z.nativeEnum(CasePriority).optional(),
+  offset: z.number().int().nonnegative().optional(),
+  status: z
+    .union([z.nativeEnum(CaseStatus), z.array(z.nativeEnum(CaseStatus))])
+    .optional(),
+  priority: z
+    .union([z.nativeEnum(CasePriority), z.array(z.nativeEnum(CasePriority))])
+    .optional(),
   departmentId: z.string().optional(),
   assignedToId: z.string().optional(),
-  source: z.nativeEnum(CaseSource).optional(),
+  source: z
+    .union([z.nativeEnum(CaseSource), z.array(z.nativeEnum(CaseSource))])
+    .optional(),
   search: z.string().optional(),
 });
 
@@ -53,17 +60,30 @@ const batchRespondSchema = z.object({
 
 export const casesRouter = router({
   list: protectedProcedure.input(caseFilterSchema).query(async ({ ctx, input }) => {
-    const skip = (input.page - 1) * input.limit;
+    const skip =
+      input.offset !== undefined ? input.offset : (input.page - 1) * input.limit;
 
-    const where: any = {
-      cityId: ctx.cityId,
+    const where: Prisma.CaseWhereInput = {
+      cityId: ctx.cityId ?? undefined,
     };
 
-    if (input.status) where.status = input.status;
-    if (input.priority) where.priority = input.priority;
+    if (input.status) {
+      where.status = Array.isArray(input.status)
+        ? { in: input.status }
+        : input.status;
+    }
+    if (input.priority) {
+      where.priority = Array.isArray(input.priority)
+        ? { in: input.priority }
+        : input.priority;
+    }
     if (input.departmentId) where.departmentId = input.departmentId;
     if (input.assignedToId) where.assignedToId = input.assignedToId;
-    if (input.source) where.source = input.source;
+    if (input.source) {
+      where.source = Array.isArray(input.source)
+        ? { in: input.source }
+        : input.source;
+    }
 
     if (input.search) {
       where.OR = [
@@ -206,6 +226,192 @@ export const casesRouter = router({
           details: {
             referenceNumber: caseRecord.referenceNumber,
             constituent: constituent.email,
+          },
+        },
+      });
+
+      return caseRecord;
+    }),
+
+  createFromContact: publicProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().optional(),
+        subject: z.string().min(1),
+        description: z.string().min(1),
+        departmentId: z.string().optional(),
+        language: z.string().optional().default("en"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.cityId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No city configured",
+        });
+      }
+
+      const constituent = await ctx.prisma.constituent.upsert({
+        where: {
+          cityId_email: {
+            cityId: ctx.cityId,
+            email: input.email,
+          },
+        },
+        update: {
+          name: input.name,
+          phone: input.phone || undefined,
+          languagePreference: input.language,
+        },
+        create: {
+          cityId: ctx.cityId,
+          email: input.email,
+          name: input.name,
+          phone: input.phone,
+          languagePreference: input.language,
+        },
+      });
+
+      // Resolve department: provided id, otherwise first active department.
+      const department = input.departmentId
+        ? await ctx.prisma.department.findFirst({
+            where: { id: input.departmentId, cityId: ctx.cityId, isActive: true },
+          })
+        : await ctx.prisma.department.findFirst({
+            where: { cityId: ctx.cityId, isActive: true },
+            orderBy: { name: "asc" },
+          });
+
+      if (!department) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No departments available",
+        });
+      }
+
+      const referenceNumber = `${new Date().getFullYear()}-${nanoid(8).toUpperCase()}`;
+      const slaDeadline = new Date();
+      slaDeadline.setHours(slaDeadline.getHours() + department.defaultSlaHours);
+
+      const caseRecord = await ctx.prisma.case.create({
+        data: {
+          cityId: ctx.cityId,
+          referenceNumber,
+          constituentId: constituent.id,
+          subject: input.subject,
+          description: input.description,
+          source: CaseSource.WEB_FORM,
+          departmentId: department.id,
+          priority: CasePriority.NORMAL,
+          slaDeadline,
+        },
+      });
+
+      return {
+        referenceNumber: caseRecord.referenceNumber,
+        caseId: caseRecord.id,
+      };
+    }),
+
+  createManual: protectedProcedure
+    .input(
+      z.object({
+        constituentName: z.string().optional(),
+        constituentEmail: z.string().email(),
+        constituentPhone: z.string().optional(),
+        subject: z.string().min(1),
+        description: z.string().min(1),
+        source: z.nativeEnum(CaseSource).optional().default(CaseSource.PHONE),
+        departmentId: z.string().optional(),
+        priority: z
+          .nativeEnum(CasePriority)
+          .optional()
+          .default(CasePriority.NORMAL),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const constituent = await ctx.prisma.constituent.upsert({
+        where: {
+          cityId_email: {
+            cityId: ctx.cityId,
+            email: input.constituentEmail,
+          },
+        },
+        update: {
+          name: input.constituentName || undefined,
+          phone: input.constituentPhone || undefined,
+        },
+        create: {
+          email: input.constituentEmail,
+          name: input.constituentName || input.constituentEmail,
+          phone: input.constituentPhone || undefined,
+          cityId: ctx.cityId,
+        },
+      });
+
+      const referenceNumber = `${new Date().getFullYear()}-${nanoid(8).toUpperCase()}`;
+
+      // Resolve department: use provided id, otherwise fall back to the
+      // first department configured for the city.
+      const department = input.departmentId
+        ? await ctx.prisma.department.findFirst({
+            where: { id: input.departmentId, cityId: ctx.cityId },
+          })
+        : await ctx.prisma.department.findFirst({
+            where: { cityId: ctx.cityId },
+          });
+
+      if (!department) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No department available for this case",
+        });
+      }
+
+      const slaConfig = await ctx.prisma.slaConfig.findFirst({
+        where: {
+          cityId: ctx.cityId,
+          departmentId: department.id,
+          priority: input.priority,
+        },
+      });
+
+      const responseHours =
+        slaConfig?.responseHours || department.defaultSlaHours;
+      const slaDeadline = new Date();
+      slaDeadline.setHours(slaDeadline.getHours() + responseHours);
+
+      const caseRecord = await ctx.prisma.case.create({
+        data: {
+          cityId: ctx.cityId,
+          referenceNumber,
+          constituentId: constituent.id,
+          subject: input.subject,
+          description: input.description,
+          source: input.source,
+          departmentId: department.id,
+          priority: input.priority,
+          slaDeadline,
+        },
+        include: {
+          constituent: true,
+          department: true,
+        },
+      });
+
+      await ctx.prisma.auditLog.create({
+        data: {
+          cityId: ctx.cityId,
+          userId: ctx.user.id,
+          action: "CREATE",
+          resourceType: "CASE",
+          resourceId: caseRecord.id,
+          details: {
+            referenceNumber: caseRecord.referenceNumber,
+            constituent: constituent.email,
+            manual: true,
           },
         },
       });
@@ -461,16 +667,23 @@ export const casesRouter = router({
     }),
 
   getViewers: protectedProcedure
-    .input(z.object({ caseId: z.string() }))
+    .input(z.object({ caseId: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
+      if (!input?.caseId) {
+        return { viewers: [] as string[] };
+      }
       const viewers = await ctx.redis.smembers(`case:${input.caseId}:viewers`);
       return { viewers };
     }),
 
   setViewing: protectedProcedure
-    .input(z.object({ caseId: z.string() }))
+    .input(z.object({ caseId: z.string(), isViewing: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
       const key = `case:${input.caseId}:viewers`;
+      if (input.isViewing === false) {
+        await ctx.redis.srem(key, ctx.user.id);
+        return { success: true };
+      }
       await ctx.redis.sadd(key, ctx.user.id);
       await ctx.redis.expire(key, 300);
       return { success: true };

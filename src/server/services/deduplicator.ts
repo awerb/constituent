@@ -122,8 +122,12 @@ export async function mergeConstituents(
 
     // Merge metadata
     const mergedMetadata = {
-      ...duplicate.metadata,
-      ...primary.metadata,
+      ...(typeof duplicate.metadata === "object" && duplicate.metadata !== null
+        ? duplicate.metadata
+        : {}),
+      ...(typeof primary.metadata === "object" && primary.metadata !== null
+        ? primary.metadata
+        : {}),
       mergedFrom: {
         id: duplicate.id,
         email: duplicate.email,
@@ -279,8 +283,12 @@ export async function getMergePreview(
     });
 
     const mergedMetadata = {
-      ...duplicate.metadata,
-      ...primary.metadata,
+      ...(typeof duplicate.metadata === "object" && duplicate.metadata !== null
+        ? duplicate.metadata
+        : {}),
+      ...(typeof primary.metadata === "object" && primary.metadata !== null
+        ? primary.metadata
+        : {}),
     };
 
     return {

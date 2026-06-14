@@ -61,10 +61,7 @@ export function createProcessSignalWorker() {
       }
     },
     {
-      settings: {
-        lockDuration: 120000, // 120 second lock for complex signal processing
-        lockRenewTime: 60000,
-      },
+      lockDuration: 120000, // 120 second lock for complex signal processing
     }
   );
 }

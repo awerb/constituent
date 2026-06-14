@@ -6,7 +6,9 @@ import { ChevronDown, ChevronUp, ThumbsUp, Flag, ExternalLink } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 
 interface NewsletterContextProps {
-  newsletterSignal: NewsletterSignal;
+  newsletterSignal: NewsletterSignal & {
+    metadata?: Record<string, unknown> | null;
+  };
 }
 
 export const NewsletterContext: React.FC<NewsletterContextProps> = ({
@@ -14,8 +16,9 @@ export const NewsletterContext: React.FC<NewsletterContextProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Cast metadata to expected structure
-  const metadata = (newsletterSignal.metadata as Record<string, unknown>) || {};
+  // Cast metadata to expected structure (may be supplied via related data)
+  const metadata =
+    (newsletterSignal.metadata as Record<string, unknown> | undefined) || {};
   const title = (metadata.title as string) || 'Newsletter Item';
   const summary = (metadata.summary as string) || '';
   const tcDataUrl = (metadata.tcDataUrl as string) || '';

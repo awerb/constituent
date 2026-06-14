@@ -71,8 +71,12 @@ const webhookDeleteSchema = z.object({
 const auditLogSchema = z.object({
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().max(100).optional().default(50),
+  offset: z.number().int().nonnegative().optional(),
   action: z.string().optional(),
   userId: z.string().optional(),
+  search: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 const processPrivacySchema = z.object({
@@ -224,13 +228,35 @@ export const adminRouter = router({
       return updated;
     }),
 
-  listUsers: adminProcedure.query(async ({ ctx }) => {
-    return ctx.prisma.user.findMany({
-      where: { cityId: ctx.cityId },
-      include: { department: true },
-      orderBy: { name: "asc" },
-    });
-  }),
+  listUsers: adminProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().positive().max(500).optional(),
+          offset: z.number().int().nonnegative().optional(),
+          search: z.string().optional(),
+          role: z.string().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const where: any = { cityId: ctx.cityId };
+      if (input?.role) where.role = input.role;
+      if (input?.search) {
+        where.OR = [
+          { name: { contains: input.search, mode: "insensitive" } },
+          { email: { contains: input.search, mode: "insensitive" } },
+        ];
+      }
+
+      return ctx.prisma.user.findMany({
+        where,
+        include: { department: true },
+        orderBy: { name: "asc" },
+        ...(input?.limit !== undefined ? { take: input.limit } : {}),
+        ...(input?.offset !== undefined ? { skip: input.offset } : {}),
+      });
+    }),
 
   createUser: adminProcedure
     .input(userCreateSchema)
@@ -500,7 +526,8 @@ export const adminRouter = router({
     }),
 
   getAuditLog: adminProcedure.input(auditLogSchema).query(async ({ ctx, input }) => {
-    const skip = (input.page - 1) * input.limit;
+    const skip =
+      input.offset !== undefined ? input.offset : (input.page - 1) * input.limit;
 
     const where: any = {
       cityId: ctx.cityId,
@@ -508,6 +535,19 @@ export const adminRouter = router({
 
     if (input.action) where.action = input.action;
     if (input.userId) where.userId = input.userId;
+    if (input.search) {
+      where.OR = [
+        { action: { contains: input.search, mode: "insensitive" } },
+        { resourceType: { contains: input.search, mode: "insensitive" } },
+        { resourceId: { contains: input.search, mode: "insensitive" } },
+      ];
+    }
+    if (input.startDate || input.endDate) {
+      where.createdAt = {
+        ...(input.startDate ? { gte: new Date(input.startDate) } : {}),
+        ...(input.endDate ? { lte: new Date(input.endDate) } : {}),
+      };
+    }
 
     const [logs, total] = await Promise.all([
       ctx.prisma.auditLog.findMany({
@@ -526,6 +566,26 @@ export const adminRouter = router({
       page: input.page,
       limit: input.limit,
       totalPages: Math.ceil(total / input.limit),
+    };
+  }),
+
+  prepareDataExport: adminProcedure.query(async ({ ctx }) => {
+    const [caseCount, constituentCount, messageCount, userCount] =
+      await Promise.all([
+        ctx.prisma.case.count({ where: { cityId: ctx.cityId } }),
+        ctx.prisma.constituent.count({ where: { cityId: ctx.cityId } }),
+        ctx.prisma.caseMessage.count({
+          where: { case: { cityId: ctx.cityId } },
+        }),
+        ctx.prisma.user.count({ where: { cityId: ctx.cityId } }),
+      ]);
+
+    return {
+      caseCount,
+      constituentCount,
+      messageCount,
+      userCount,
+      generatedAt: new Date().toISOString(),
     };
   }),
 

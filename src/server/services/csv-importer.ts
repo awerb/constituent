@@ -55,8 +55,8 @@ function parseCSV(buffer: Buffer): Record<string, string>[] {
       trim: true,
       relax_quotes: true,
       relax_column_count: true,
-      quote_char: '"',
-      escape_char: '"',
+      quote: '"',
+      escape: '"',
       delimiter: [",", "\t"],
     }) as Record<string, string>[];
 

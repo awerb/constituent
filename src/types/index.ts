@@ -1,4 +1,4 @@
-import type { User as PrismaUser, Case as PrismaCase, Constituent as PrismaConstituent, CaseMessage as PrismaCaseMessage, Department as PrismaDepartment, Role, CaseStatus, CasePriority, CaseSource } from "@prisma/client";
+import type { User as PrismaUser, Case as PrismaCase, Constituent as PrismaConstituent, CaseMessage as PrismaCaseMessage, Department as PrismaDepartment, NewsletterSignal as PrismaNewsletterSignal, Role, CaseStatus, CasePriority, CaseSource } from "@prisma/client";
 
 // Extended User type with role information
 export interface User extends PrismaUser {
@@ -11,6 +11,7 @@ export interface CaseWithRelations extends PrismaCase {
   department: PrismaDepartment;
   assignedTo?: User | null;
   messages: CaseMessage[];
+  newsletterSignals?: PrismaNewsletterSignal[];
 }
 
 // Extended Constituent type

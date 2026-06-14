@@ -1,5 +1,4 @@
-import type { Case, CaseMessage, NewsletterSignal, CaseStatus, CasePriority, CaseSource, AuthorType } from "@prisma/client";
-import type { Constituent } from "./constituent";
+import type { Case, CaseMessage, NewsletterSignal, Constituent, CaseStatus, CasePriority, CaseSource, AuthorType } from "@prisma/client";
 import type { User } from "@/types/index";
 
 // Case with all relations

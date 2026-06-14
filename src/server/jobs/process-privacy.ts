@@ -60,10 +60,7 @@ export function createProcessPrivacyWorker() {
       }
     },
     {
-      settings: {
-        lockDuration: 300000, // 5 minute lock for privacy requests
-        lockRenewTime: 150000,
-      },
+      lockDuration: 300000, // 5 minute lock for privacy requests
     }
   );
 }
@@ -231,7 +228,6 @@ async function handleDeletionRequest(
     return {
       success: true,
       jobId,
-      constituentId,
       requestType: "deletion",
       ...deletionResult,
       emailQueued: true,

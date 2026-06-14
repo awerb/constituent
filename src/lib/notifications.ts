@@ -10,6 +10,8 @@ export enum NotificationEvent {
   SLA_WARNING = "sla.warning",
   SLA_BREACHED = "sla.breached",
   CONSTITUENT_REPLIED = "constituent.replied",
+  CASE_CONSTITUENTREPLY = "case.constituent_reply",
+  CASE_ESCALATED = "case.escalated",
   TEMPLATE_APPROVED = "template.approved",
   SIGNAL_FLAGGED = "signal.flagged",
   USER_INVITED = "user.invited",
@@ -267,6 +269,16 @@ export function getNotificationTemplate(event: NotificationEvent): {
       subject: "Constituent Reply",
       template: "constituent-replied",
       category: "Messages",
+    },
+    [NotificationEvent.CASE_CONSTITUENTREPLY]: {
+      subject: "Constituent Reply",
+      template: "constituent-replied",
+      category: "Messages",
+    },
+    [NotificationEvent.CASE_ESCALATED]: {
+      subject: "Case Escalated",
+      template: "case-escalated",
+      category: "Cases",
     },
     [NotificationEvent.TEMPLATE_APPROVED]: {
       subject: "Template Approved",

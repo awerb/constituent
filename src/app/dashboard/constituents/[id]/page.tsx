@@ -158,10 +158,10 @@ export default function ConstituentDetailPage() {
               </div>
             )}
 
-            {constituent.preferredLanguage && (
+            {constituent.languagePreference && (
               <div>
                 <p className="text-sm text-muted-foreground">Preferred Language</p>
-                <p className="font-medium">{constituent.preferredLanguage}</p>
+                <p className="font-medium">{constituent.languagePreference}</p>
               </div>
             )}
 

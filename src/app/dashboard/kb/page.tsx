@@ -54,7 +54,7 @@ export default function KnowledgeBasePage() {
     );
   }
 
-  const articles = articlesQuery.data?.data || [];
+  const articles = articlesQuery.data || [];
 
   return (
     <div className="space-y-6">

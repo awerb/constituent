@@ -18,8 +18,13 @@ export default async function ElectedLayout({
   }
 
   // Check if user is elected official or higher
-  const userRole = (session.user as any).role as Role;
-  if (![Role.ELECTED_OFFICIAL, Role.ADMIN, Role.SUPER_ADMIN].includes(userRole)) {
+  const userRole = (session.user as { role: Role }).role;
+  const allowedRoles: Role[] = [
+    Role.ELECTED_OFFICIAL,
+    Role.ADMIN,
+    Role.SUPER_ADMIN,
+  ];
+  if (!allowedRoles.includes(userRole)) {
     redirect("/dashboard");
   }
 

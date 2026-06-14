@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 const listSchema = z.object({
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().max(100).optional().default(20),
+  offset: z.number().int().nonnegative().optional(),
   search: z.string().optional(),
 });
 
@@ -32,7 +33,8 @@ const requestDeletionSchema = z.object({
 
 export const constituentsRouter = router({
   list: protectedProcedure.input(listSchema).query(async ({ ctx, input }) => {
-    const skip = (input.page - 1) * input.limit;
+    const skip =
+      input.offset !== undefined ? input.offset : (input.page - 1) * input.limit;
 
     const where: any = {
       cityId: ctx.cityId,

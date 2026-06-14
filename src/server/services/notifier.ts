@@ -162,6 +162,30 @@ function getNotificationTemplate(
       subject: "Case Assigned to You",
       body: `Case {{referenceNumber}} has been assigned to you:\n\nSubject: {{subject}}\n\nPlease log in to review the case details.`,
     },
+    [NotificationEvent.CASE_STATUS_CHANGED]: {
+      subject: "Case Status Updated - {{referenceNumber}}",
+      body: `The status of case {{referenceNumber}} has changed:\n\nSubject: {{subject}}\nNew Status: {{status}}\n\nPlease review the case for details.`,
+    },
+    [NotificationEvent.CASE_RESOLVED]: {
+      subject: "Case Resolved - {{referenceNumber}}",
+      body: `Case {{referenceNumber}} has been resolved:\n\nSubject: {{subject}}\n\nNo further action may be required.`,
+    },
+    [NotificationEvent.CASE_CLOSED]: {
+      subject: "Case Closed - {{referenceNumber}}",
+      body: `Case {{referenceNumber}} has been closed:\n\nSubject: {{subject}}`,
+    },
+    [NotificationEvent.MESSAGE_ADDED]: {
+      subject: "New Message - {{referenceNumber}}",
+      body: `A new message has been added to case {{referenceNumber}}:\n\nSubject: {{subject}}\n\nPlease review the conversation.`,
+    },
+    [NotificationEvent.CONSTITUENT_REPLIED]: {
+      subject: "Constituent Reply - {{referenceNumber}}",
+      body: `The constituent has replied to case {{referenceNumber}}:\n\nSubject: {{subject}}\n\nPlease review their response and take appropriate action.`,
+    },
+    [NotificationEvent.USER_INVITED]: {
+      subject: "You've Been Invited",
+      body: `You have been invited to join the team. Please log in to get started.`,
+    },
     [NotificationEvent.SLA_WARNING]: {
       subject: "SLA Warning - {{hoursRemaining}} Hours Remaining",
       body: `Case {{referenceNumber}} is approaching its SLA deadline.\n\nSubject: {{subject}}\nHours Remaining: {{hoursRemaining}}h {{minutesRemaining}}m\nDeadline: {{deadline}}\n\nPlease respond to this case promptly.`,

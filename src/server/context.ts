@@ -21,6 +21,7 @@ export interface TRPCContext {
     name: string;
     role: string;
     cityId: string;
+    ward?: string | null;
   } | null;
   cityId: string | null;
   prisma: PrismaClient;
@@ -64,13 +65,30 @@ export async function createTRPCContext(opts: CreateContextOptions): Promise<TRP
     };
   }
 
-  const user = session.user as {
+  const sessionUser = session.user as {
     id: string;
     email: string;
     name: string;
     role: string;
     cityId: string;
+    ward?: string | null;
   };
+
+  // Fetch the ward for the user (used by elected procedures)
+  let ward: string | null = sessionUser.ward ?? null;
+  if (ward === null) {
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: sessionUser.id },
+        select: { ward: true },
+      });
+      ward = dbUser?.ward ?? null;
+    } catch (error) {
+      console.error("Failed to fetch user ward:", error);
+    }
+  }
+
+  const user = { ...sessionUser, ward };
 
   const cityId = user.cityId;
 

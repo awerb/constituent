@@ -1,4 +1,10 @@
-import { Queue, Worker, type WorkerOptions } from "bullmq";
+import {
+  Queue,
+  Worker,
+  type WorkerOptions,
+  type ConnectionOptions,
+  type Processor,
+} from "bullmq";
 import { redis } from "@/lib/redis";
 
 const connection = {
@@ -28,21 +34,6 @@ queues.forEach((queue) => {
   queue.on("error", (error) => {
     console.error(`Queue ${queue.name} error:`, error);
   });
-
-  queue.on("failed", (job, error) => {
-    console.error(
-      `Job ${job.id} in queue ${queue.name} failed:`,
-      error.message
-    );
-  });
-
-  queue.on("stalled", (jobId) => {
-    console.warn(`Job ${jobId} in queue ${queue.name} stalled`);
-  });
-
-  queue.on("completed", (job) => {
-    console.log(`Job ${job.id} in queue ${queue.name} completed`);
-  });
 });
 
 export interface WorkerHandler<T, R> {
@@ -54,13 +45,12 @@ export function createWorker<T = unknown, R = unknown>(
   handler: WorkerHandler<T, R>,
   options?: Partial<WorkerOptions>
 ): Worker<T, R> {
-  const worker = new Worker(queueName, handler as any, {
-    connection: redis,
+  const worker = new Worker(queueName, handler as Processor<T, R>, {
+    connection: redis as unknown as ConnectionOptions,
     concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5"),
+    lockDuration: 30000,
+    maxStalledCount: 3,
     settings: {
-      lockDuration: 30000,
-      lockRenewTime: 15000,
-      maxStalledCount: 3,
       ...options?.settings,
     },
     ...options,
@@ -97,8 +87,7 @@ export async function checkQueueHealth(): Promise<{
   const queueStatuses = await Promise.all(
     queues.map(async (queue) => {
       try {
-        const client = queue.client;
-        await client.ping();
+        await redis.ping();
         return { name: queue.name, status: "connected" as const };
       } catch (error) {
         return { name: queue.name, status: "disconnected" as const };

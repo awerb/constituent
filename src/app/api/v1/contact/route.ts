@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     slaDeadline.setHours(slaDeadline.getHours() + dept.defaultSlaHours);
 
     // Create case
-    const referenceNumber = await generateReferenceNumber(city.id);
+    const referenceNumber = await generateReferenceNumber(city.id, prisma);
 
     const caseRecord = await prisma.case.create({
       data: {

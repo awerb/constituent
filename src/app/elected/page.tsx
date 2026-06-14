@@ -90,8 +90,19 @@ export default function ElectedDashboardPage() {
       {data && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DistrictSummary data={data.summary} />
-            <ResponseRateCard data={data.responseRate} />
+            <DistrictSummary
+              flagsThisWeek={data.summary.flagsThisWeek}
+              applaudsThisWeek={data.summary.applaudsThisWeek}
+              openCases={data.summary.openCases}
+              avgResponseTime={data.summary.avgResponseTime}
+              flagsTrend={data.summary.flagsTrend}
+              applaudsTrend={data.summary.applaudsTrend}
+            />
+            <ResponseRateCard
+              districtAvg={data.responseRate.districtAvg}
+              cityWideAvg={data.responseRate.cityWideAvg}
+              districtName={data.responseRate.districtName}
+            />
           </div>
 
           {/* Top Items */}
@@ -101,7 +112,7 @@ export default function ElectedDashboardPage() {
                 <ThumbsUp className="w-5 h-5 text-green-600" />
                 Positive Feedback
               </h2>
-              <TopApplauded cases={data.topApplauded || []} />
+              <TopApplauded items={data.topApplauded || []} />
             </div>
 
             <div>
@@ -109,7 +120,7 @@ export default function ElectedDashboardPage() {
                 <ThumbsDown className="w-5 h-5 text-red-600" />
                 Flagged Issues
               </h2>
-              <TopFlagged cases={data.topFlagged || []} />
+              <TopFlagged items={data.topFlagged || []} />
             </div>
           </div>
 

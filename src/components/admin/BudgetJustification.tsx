@@ -429,7 +429,7 @@ Questions? Email: setup@transparentcity.co
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis label={{ value: "Cumulative Benefit ($)", angle: -90, position: "insideLeft" }} />
-              <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+              <Tooltip formatter={(value) => `$${Number(value).toFixed(2)}`} />
               <Bar dataKey="cumulative" fill="#10b981" name="Net Benefit" />
             </BarChart>
           </ResponsiveContainer>

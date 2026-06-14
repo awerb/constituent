@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password required");
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await prisma.user.findFirst({
           where: { email: credentials.email },
           include: { city: true },
         });
@@ -68,7 +68,7 @@ export const authOptions: NextAuthOptions = {
               url,
               provider,
             }) {
-              const { nodemailer } = await import("nodemailer");
+              const nodemailer = await import("nodemailer");
               const transport = nodemailer.createTransport({
                 host: process.env.EMAIL_SERVER_HOST,
                 port: parseInt(process.env.EMAIL_SERVER_PORT || "587"),
@@ -86,7 +86,8 @@ export const authOptions: NextAuthOptions = {
                 text: `Sign in link: ${url}`,
               });
 
-              if (result.error) {
+              const rejected = result.rejected || [];
+              if (rejected.length > 0) {
                 throw new Error("Nodemailer error: send failed");
               }
             },
@@ -125,9 +126,8 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.role = dbUser.role;
           token.cityId = dbUser.cityId;
-          if (!dbUser.isActive) {
-            return null;
-          }
+          // Flag inactive users; the session/signIn callbacks enforce access.
+          token.isActive = dbUser.isActive;
         }
       }
 

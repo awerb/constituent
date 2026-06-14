@@ -71,7 +71,7 @@ export function applytTenantMiddleware(prisma: PrismaClient, userRole?: Role, us
       "AuditLog",
     ];
 
-    if (!tenantModels.includes(model)) {
+    if (!model || !tenantModels.includes(model)) {
       return next(params);
     }
 

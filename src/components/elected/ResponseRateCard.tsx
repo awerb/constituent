@@ -73,7 +73,7 @@ export function ResponseRateCard({
               borderRadius: '8px',
               color: '#f3f4f6',
             }}
-            formatter={(value) => [`${value.toFixed(1)} hours`, '']}
+            formatter={(value) => [`${Number(value).toFixed(1)} hours`, '']}
             cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
           />
           <Legend

@@ -40,7 +40,7 @@ export function CostEstimator({
   const hostingCost = isCloudHosted ? 100 : 0; // Assuming self-hosted
 
   // Email cost (Gmail SMTP is free for < 500/day, estimate SendGrid at ~$10/month if needed)
-  const emailCost = 0; // Using Gmail SMTP
+  const emailCost: number = 0; // Using Gmail SMTP
 
   // Total monthly cost
   const totalMonthlyCost = hostingCost + aiCost + emailCost;

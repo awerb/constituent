@@ -112,10 +112,7 @@ export function createGenerateReportWorker() {
       }
     },
     {
-      settings: {
-        lockDuration: 600000, // 10 minute lock for report generation (can be long)
-        lockRenewTime: 300000, // Renew every 5 minutes
-      },
+      lockDuration: 600000, // 10 minute lock for report generation (can be long)
     }
   );
 }

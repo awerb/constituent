@@ -39,6 +39,16 @@ const NAV_ITEMS: NavItem[] = [
 interface SidebarProps {
   cityName?: string
   cityLogo?: string
+  user?: {
+    id?: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+    role?: string
+  }
+  adminMode?: boolean
+  electedMode?: boolean
+  superAdminMode?: boolean
 }
 
 export const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(

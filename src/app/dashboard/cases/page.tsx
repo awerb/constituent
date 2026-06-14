@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import type { CaseStatus, CasePriority } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -39,8 +40,8 @@ export default function CasesPage() {
       limit: 100,
       offset: 0,
       search: search || undefined,
-      status: status ? [status as any] : undefined,
-      priority: priority ? [priority as any] : undefined,
+      status: status ? [status as CaseStatus] : undefined,
+      priority: priority ? [priority as CasePriority] : undefined,
     },
     { staleTime: 60 * 1000 }
   );
@@ -102,7 +103,7 @@ export default function CasesPage() {
     );
   }
 
-  const cases = casesQuery.data?.data || [];
+  const cases = casesQuery.data?.cases || [];
 
   return (
     <div className="space-y-6">

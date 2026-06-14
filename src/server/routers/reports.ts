@@ -31,7 +31,85 @@ const exportCsvSchema = z.object({
   departmentId: z.string().optional(),
 });
 
+const generateReportSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  department: z.string().optional(),
+});
+
 export const reportsRouter = router({
+  generateReport: protectedProcedure
+    .input(generateReportSchema)
+    .query(async ({ ctx, input }) => {
+      const startDate = new Date(input.startDate);
+      const endDate = new Date(input.endDate);
+
+      // Resolve optional department slug to an id
+      let departmentId: string | undefined;
+      if (input.department) {
+        const dept = await ctx.prisma.department.findFirst({
+          where: { cityId: ctx.cityId ?? undefined, slug: input.department },
+          select: { id: true },
+        });
+        departmentId = dept?.id;
+      }
+
+      const where = {
+        cityId: ctx.cityId ?? undefined,
+        createdAt: { gte: startDate, lte: endDate },
+        ...(departmentId ? { departmentId } : {}),
+      };
+
+      const cases = await ctx.prisma.case.findMany({
+        where,
+        select: {
+          status: true,
+          createdAt: true,
+          closedAt: true,
+          resolvedAt: true,
+          firstRespondedAt: true,
+          slaBreached: true,
+        },
+      });
+
+      const casesByStatus: Record<string, number> = {};
+      for (const c of cases) {
+        casesByStatus[c.status] = (casesByStatus[c.status] || 0) + 1;
+      }
+
+      const resolvedCasesList = cases.filter((c) => c.resolvedAt || c.closedAt);
+      let avgResolutionTime = 0;
+      if (resolvedCasesList.length > 0) {
+        const totalMs = resolvedCasesList.reduce((sum, c) => {
+          const end = (c.resolvedAt || c.closedAt)!.getTime();
+          return sum + (end - c.createdAt.getTime());
+        }, 0);
+        avgResolutionTime =
+          Math.round((totalMs / resolvedCasesList.length / 1000 / 60 / 60) * 10) /
+          10;
+      }
+
+      const breachedCount = cases.filter((c) => c.slaBreached).length;
+      const slaBreachRate =
+        cases.length > 0
+          ? Math.round((breachedCount / cases.length) * 1000) / 10
+          : 0;
+
+      return {
+        totalCases: cases.length,
+        newCases: casesByStatus[CaseStatus.NEW] || 0,
+        activeCases:
+          (casesByStatus[CaseStatus.ASSIGNED] || 0) +
+          (casesByStatus[CaseStatus.IN_PROGRESS] || 0),
+        resolvedCases:
+          (casesByStatus[CaseStatus.RESOLVED] || 0) +
+          (casesByStatus[CaseStatus.CLOSED] || 0),
+        casesByStatus,
+        avgResolutionTime,
+        slaBreachRate,
+      };
+    }),
+
   caseVolume: protectedProcedure
     .input(dateRangeSchema)
     .query(async ({ ctx, input }) => {
@@ -89,9 +167,6 @@ export const reportsRouter = router({
             lte: input.endDate,
           },
           ...(input.departmentId && { departmentId: input.departmentId }),
-        },
-        include: {
-          department: true,
         },
         select: {
           id: true,

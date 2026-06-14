@@ -6,6 +6,8 @@ const listSchema = z.object({
   category: z.string().optional(),
   departmentId: z.string().optional(),
   search: z.string().optional(),
+  limit: z.number().int().positive().max(500).optional(),
+  offset: z.number().int().nonnegative().optional(),
 });
 
 const getByIdSchema = z.object({
@@ -54,6 +56,8 @@ export const kbRouter = router({
         department: true,
       },
       orderBy: { createdAt: "desc" },
+      ...(input.limit !== undefined ? { take: input.limit } : {}),
+      ...(input.offset !== undefined ? { skip: input.offset } : {}),
     });
 
     return articles;

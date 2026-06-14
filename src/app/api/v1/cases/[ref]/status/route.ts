@@ -8,9 +8,10 @@ import { rateLimit, getClientIp, attachRateLimitHeaders } from "@/lib/rate-limit
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { ref: string } }
+  { params }: { params: Promise<{ ref: string }> }
 ) {
   try {
+    const { ref } = await params;
     const ip = getClientIp(request);
 
     // Apply rate limiting: 30 requests per minute per IP
@@ -33,7 +34,7 @@ export async function GET(
 
     // Validate reference number format (e.g., CR-2024-00147)
     const refRegex = /^[A-Z]{2}-\d{4}-\d{5}$/;
-    if (!refRegex.test(params.ref)) {
+    if (!refRegex.test(ref)) {
       return NextResponse.json(
         {
           error: "invalid_reference_number",
@@ -45,7 +46,7 @@ export async function GET(
 
     // Find case by reference number
     const caseRecord = await prisma.case.findUnique({
-      where: { referenceNumber: params.ref },
+      where: { referenceNumber: ref },
       select: {
         referenceNumber: true,
         status: true,

@@ -18,8 +18,9 @@ export default async function AdminLayout({
   }
 
   // Check if user is admin or higher
-  const userRole = (session.user as any).role as Role;
-  if (![Role.ADMIN, Role.SUPER_ADMIN].includes(userRole)) {
+  const userRole = (session.user as { role: Role }).role;
+  const allowedRoles: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
+  if (!allowedRoles.includes(userRole)) {
     redirect("/dashboard");
   }
 

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { CaseDetail } from "@/components/cases/CaseDetail";
+import type { CaseWithRelations } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -11,27 +13,30 @@ import { trpc } from "@/lib/trpc";
 export default function CaseDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { data: session } = useSession();
   const caseId = params?.id as string;
+  const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? "";
 
   const caseQuery = trpc.cases.getById.useQuery(
-    { caseId },
+    { id: caseId },
     {
       enabled: !!caseId,
       staleTime: 30 * 1000,
     }
   );
 
-  const setViewerMutation = trpc.cases.setViewer.useMutation();
+  const setViewerMutation = trpc.cases.setViewing.useMutation();
 
   // Register viewer for collision detection
   useEffect(() => {
-    if (caseId) {
-      setViewerMutation.mutate({ caseId, isViewing: true });
-
-      return () => {
-        setViewerMutation.mutate({ caseId, isViewing: false });
-      };
+    if (!caseId) {
+      return;
     }
+    setViewerMutation.mutate({ caseId, isViewing: true });
+
+    return () => {
+      setViewerMutation.mutate({ caseId, isViewing: false });
+    };
   }, [caseId]);
 
   if (!caseId) {
@@ -89,7 +94,10 @@ export default function CaseDetailPage() {
         Back
       </Button>
 
-      <CaseDetail case={caseQuery.data} />
+      <CaseDetail
+        caseData={caseQuery.data as unknown as CaseWithRelations}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

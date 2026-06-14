@@ -68,10 +68,7 @@ export function createDispatchWebhookWorker() {
       }
     },
     {
-      settings: {
-        lockDuration: 60000, // 60 second lock for webhook delivery
-        lockRenewTime: 30000,
-      },
+      lockDuration: 60000, // 60 second lock for webhook delivery
     }
   );
 }

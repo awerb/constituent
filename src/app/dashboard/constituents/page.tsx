@@ -66,7 +66,7 @@ export default function ConstituentsPage() {
     );
   }
 
-  const constituents = constituentsQuery.data?.data || [];
+  const constituents = constituentsQuery.data?.constituents || [];
 
   return (
     <div className="space-y-6">

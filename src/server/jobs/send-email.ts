@@ -65,10 +65,7 @@ export function createSendEmailWorker() {
       }
     },
     {
-      settings: {
-        lockDuration: 60000, // 60 second lock for email sending
-        lockRenewTime: 30000,
-      },
+      lockDuration: 60000, // 60 second lock for email sending
     }
   );
 }

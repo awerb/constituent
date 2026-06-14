@@ -83,7 +83,7 @@ export default function AuditPage() {
     );
   }
 
-  const logs = auditQuery.data?.data || [];
+  const logs = auditQuery.data?.logs || [];
 
   return (
     <div className="space-y-6 max-w-6xl">

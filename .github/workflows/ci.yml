@@ -10,11 +10,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# NOTE: lint, typecheck, test, and build are currently `continue-on-error: true`
-# because the scaffolded codebase has a known baseline of failures (type errors,
-# failing tests, a build route-group issue). They still RUN on every push so the
-# logs show the full picture in one run. Remove `continue-on-error` from each step
-# as that check is brought to green, so it becomes a hard gate.
+# lint, typecheck, and build are hard gates (green). `test` is still
+# `continue-on-error: true` while the failing-test baseline is brought up;
+# remove that once the suite passes.
 
 jobs:
   build-and-test:
@@ -45,11 +43,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       - name: Typecheck
         run: npm run typecheck
-        continue-on-error: true
 
       - name: Test
         run: npm test
@@ -57,4 +53,3 @@ jobs:
 
       - name: Build
         run: npm run build
-        continue-on-error: true
