@@ -48,11 +48,13 @@ export function TRPCProvider(props: TRPCProviderProps) {
   );
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {props.children}
-      </QueryClientProvider>
-    </trpc.Provider>
+    <SessionProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <QueryClientProvider client={queryClient}>
+          {props.children}
+        </QueryClientProvider>
+      </trpc.Provider>
+    </SessionProvider>
   );
 }
 

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { SetupWizard } from "@/components/SetupWizard";
+import { SetupWizard } from "@/components/admin/SetupWizard";
 
 export default async function SetupPage() {
   // Check if setup is needed (no city exists)
