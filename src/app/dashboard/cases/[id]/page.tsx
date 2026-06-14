@@ -13,7 +13,7 @@ export default function CaseDetailPage() {
   const params = useParams();
   const caseId = params?.id as string;
 
-  const caseQuery = trpc.cases.getCaseById.useQuery(
+  const caseQuery = trpc.cases.getById.useQuery(
     { caseId },
     {
       enabled: !!caseId,

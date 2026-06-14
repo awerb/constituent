@@ -21,7 +21,7 @@ export default function ConstituentsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
 
-  const constituentsQuery = trpc.constituents.listConstituents.useQuery(
+  const constituentsQuery = trpc.constituents.list.useQuery(
     {
       limit: 100,
       offset: 0,

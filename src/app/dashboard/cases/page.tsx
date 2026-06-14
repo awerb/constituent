@@ -34,7 +34,7 @@ export default function CasesPage() {
   const [department, setDepartment] = useState("");
 
   // Fetch cases
-  const casesQuery = trpc.cases.listCases.useQuery(
+  const casesQuery = trpc.cases.list.useQuery(
     {
       limit: 100,
       offset: 0,

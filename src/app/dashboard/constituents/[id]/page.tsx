@@ -22,7 +22,7 @@ export default function ConstituentDetailPage() {
   const params = useParams();
   const constituentId = params?.id as string;
 
-  const constituentQuery = trpc.constituents.getConstituent.useQuery(
+  const constituentQuery = trpc.constituents.getById.useQuery(
     { id: constituentId },
     {
       enabled: !!constituentId,

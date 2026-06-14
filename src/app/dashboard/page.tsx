@@ -12,11 +12,11 @@ export default function DashboardPage() {
   const statsQuery = trpc.dashboard.getStats.useQuery(undefined, {
     staleTime: 60 * 1000,
   });
-  const myCasesQuery = trpc.cases.getMyCases.useQuery(
+  const myCasesQuery = trpc.dashboard.getMyCases.useQuery(
     { limit: 10 },
     { staleTime: 60 * 1000 }
   );
-  const activitiesQuery = trpc.dashboard.getRecentActivity.useQuery(
+  const activitiesQuery = trpc.dashboard.getActivityFeed.useQuery(
     { limit: 20 },
     { staleTime: 60 * 1000 }
   );

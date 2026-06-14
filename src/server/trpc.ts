@@ -2,8 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { Role } from "@prisma/client";
 import type { TRPCContext } from "@/server/context";
-import { hasMinimumRole, AuthorizationError } from "@/server/middleware/auth";
-import { setTenantContext } from "@/server/middleware/tenant";
+import { hasMinimumRole } from "@/server/middleware/auth";
 
 const t = initTRPC.context<TRPCContext>().create({
   transformer: superjson,
@@ -44,83 +43,36 @@ const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
   });
 });
 
-const setTenantContextMiddleware = t.middleware(async ({ ctx, next }) => {
-  const cityId = ctx.cityId || (ctx.user?.cityId as string | null);
+export const protectedProcedure = publicProcedure.use(enforceUserIsAuthed);
 
-  if (!cityId) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Unable to determine tenant context",
-    });
-  }
-
-  return next({
-    ctx,
-  });
-});
-
-const enforceRole = (minRole: Role) => {
-  return t.middleware(async ({ ctx, next }) => {
-    if (!ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
-    }
-
-    const userRole = ctx.user.role as Role;
-
-    if (!hasMinimumRole(userRole, minRole)) {
+// Role guards are defined as inline middleware on `protectedProcedure` so they
+// inherit its narrowed context (user is non-null, cityId is a non-null string)
+// instead of re-widening it back to the base nullable context.
+const requireRole = (minRole: Role) =>
+  protectedProcedure.use(({ ctx, next }) => {
+    if (!hasMinimumRole(ctx.user.role as Role, minRole)) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: `Insufficient permissions. Required role: ${minRole}`,
       });
     }
-
-    return next({
-      ctx: {
-        user: ctx.user,
-        cityId: ctx.cityId,
-        prisma: ctx.prisma,
-        redis: ctx.redis,
-        req: ctx.req,
-      },
-    });
+    return next();
   });
-};
 
-const enforceElectedOfficial = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
-  }
+export const adminProcedure = requireRole(Role.ADMIN);
 
-  const userRole = ctx.user.role as Role;
+export const managerProcedure = requireRole(Role.MANAGER);
 
-  if (userRole !== Role.ELECTED_OFFICIAL) {
+export const agentProcedure = requireRole(Role.AGENT);
+
+export const superAdminProcedure = requireRole(Role.SUPER_ADMIN);
+
+export const electedProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if ((ctx.user.role as Role) !== Role.ELECTED_OFFICIAL) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Only elected officials can access this resource",
     });
   }
-
-  return next({
-    ctx: {
-      user: ctx.user,
-      cityId: ctx.cityId,
-      prisma: ctx.prisma,
-      redis: ctx.redis,
-      req: ctx.req,
-    },
-  });
+  return next();
 });
-
-export const protectedProcedure = publicProcedure
-  .use(enforceUserIsAuthed)
-  .use(setTenantContextMiddleware);
-
-export const adminProcedure = protectedProcedure.use(enforceRole(Role.ADMIN));
-
-export const managerProcedure = protectedProcedure.use(enforceRole(Role.MANAGER));
-
-export const agentProcedure = protectedProcedure.use(enforceRole(Role.AGENT));
-
-export const electedProcedure = protectedProcedure.use(enforceElectedOfficial);
-
-export const superAdminProcedure = protectedProcedure.use(enforceRole(Role.SUPER_ADMIN));

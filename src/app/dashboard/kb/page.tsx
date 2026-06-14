@@ -21,7 +21,7 @@ export default function KnowledgeBasePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
 
-  const articlesQuery = trpc.kb.listArticles.useQuery(
+  const articlesQuery = trpc.kb.list.useQuery(
     {
       limit: 100,
       offset: 0,

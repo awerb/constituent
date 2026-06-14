@@ -21,7 +21,7 @@ export default function InboxPage() {
   });
 
   // Fetch cases with filters
-  const casesQuery = trpc.cases.listCases.useQuery(
+  const casesQuery = trpc.cases.list.useQuery(
     {
       limit: 50,
       offset: 0,

@@ -29,7 +29,7 @@ export default function TemplatesPage() {
   const [department, setDepartment] = useState("");
   const [status, setStatus] = useState("");
 
-  const templatesQuery = trpc.templates.listTemplates.useQuery(
+  const templatesQuery = trpc.templates.list.useQuery(
     {
       limit: 100,
       offset: 0,
