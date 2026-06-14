@@ -376,6 +376,7 @@ export const reportsRouter = router({
             gte: input.startDate,
             lte: input.endDate,
           },
+          ...(input.departmentId && { departmentId: input.departmentId }),
         },
         select: {
           referenceNumber: true,

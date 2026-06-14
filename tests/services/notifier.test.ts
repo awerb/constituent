@@ -10,7 +10,29 @@ import { prisma } from "@/lib/db";
 import * as emailSender from "@/server/services/email-sender";
 import * as queue from "@/lib/queue";
 
-vi.mock("@/lib/db");
+vi.mock("@/lib/db", () => {
+  const modelMethods = [
+    "findUnique", "findUniqueOrThrow", "findFirst", "findFirstOrThrow",
+    "findMany", "create", "createMany", "update", "updateMany", "upsert",
+    "delete", "deleteMany", "count", "aggregate", "groupBy",
+  ];
+  const models = [
+    "city", "user", "department", "constituent", "case", "caseMessage",
+    "newsletterItem", "newsletterSignal", "signal", "template", "slaConfig",
+    "kbArticle", "webhook", "auditLog", "privacyRequest", "notification",
+  ];
+  const db = {};
+  for (const m of models) {
+    db[m] = {};
+    for (const fn of modelMethods) db[m][fn] = vi.fn();
+  }
+  db.$transaction = vi.fn((arg) =>
+    typeof arg === "function" ? arg(db) : Promise.all(arg)
+  );
+  db.$queryRaw = vi.fn();
+  db.$executeRaw = vi.fn();
+  return { prisma: db };
+});
 vi.mock("@/server/services/email-sender");
 vi.mock("@/lib/queue");
 
@@ -213,7 +235,8 @@ describe("Notifier Service", () => {
     });
 
     it("should replace {{constituentName}} in template", async () => {
-      await notify("user-1", NotificationEvent.CASE_ASSIGNED, {
+      // SLA_BREACHED is one of the templates that references {{constituentName}}.
+      await notify("user-1", NotificationEvent.SLA_BREACHED, {
         referenceNumber: "REF-001",
         constituentName: "Sarah Johnson",
         subject: "Test",
@@ -362,7 +385,7 @@ describe("Notifier Service", () => {
         { escalationReason: "Critical" }
       );
 
-      expect(prisma.user).findMany.toHaveBeenCalledWith({
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
         where: {
           cityId: "city-1",
           departmentId: "dept-1",
@@ -384,7 +407,7 @@ describe("Notifier Service", () => {
       );
 
       // Each manager should receive a notification (via notify function)
-      expect(prisma.user).findMany.toHaveBeenCalled();
+      expect(prisma.user.findMany).toHaveBeenCalled();
     });
   });
 
@@ -413,7 +436,7 @@ describe("Notifier Service", () => {
         newsletterTitle: "Park Updates",
       });
 
-      expect(prisma.user).findMany.toHaveBeenCalledWith({
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
         where: {
           cityId: "city-1",
           role: { in: ["SUPER_ADMIN", "ADMIN"] },

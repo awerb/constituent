@@ -144,7 +144,7 @@ describe('superAdminRouter', () => {
           state: 'CA',
           timezone: 'America/Los_Angeles',
         })
-      ).rejects.toThrow('CONFLICT');
+      ).rejects.toMatchObject({ code: 'CONFLICT' });
     });
 
     it('should create audit log entry', async () => {
@@ -272,7 +272,7 @@ describe('superAdminRouter', () => {
           id: 'nonexistent',
           name: 'Updated',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -352,9 +352,11 @@ describe('superAdminRouter', () => {
       ctx.prisma.user.count
         .mockResolvedValueOnce(10)
         .mockResolvedValueOnce(8);
+      // case.count call order: total, newCasesThisWeek, casesLastMonth, openCases
       ctx.prisma.case.count
         .mockResolvedValueOnce(100)
         .mockResolvedValueOnce(15)
+        .mockResolvedValueOnce(20)
         .mockResolvedValueOnce(50);
       ctx.prisma.constituent.count.mockResolvedValue(500);
       ctx.prisma.department.count.mockResolvedValue(5);
@@ -370,7 +372,7 @@ describe('superAdminRouter', () => {
 
       await expect(
         caller.getTenantStats({ cityId: 'nonexistent' })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
 
     it('should work across all tenants', async () => {

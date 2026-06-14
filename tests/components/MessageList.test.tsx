@@ -22,7 +22,7 @@ describe('MessageList Component', () => {
     {
       id: '2',
       referenceNumber: 'REF-002',
-      source: CaseSource.WEB as const,
+      source: CaseSource.WEB_FORM as const,
       constituentName: 'Jane Smith',
       subject: 'Parks Department Inquiry',
       priority: CasePriority.NORMAL as const,
@@ -46,9 +46,12 @@ describe('MessageList Component', () => {
       />
     );
 
-    expect(screen.getByText('REF-001')).toBeInTheDocument();
+    // The table renders constituent, subject, priority and status columns.
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    expect(screen.getByText('Pothole on Main Street')).toBeInTheDocument();
+    expect(screen.getByText('Constituent')).toBeInTheDocument();
+    expect(screen.getByText('Subject')).toBeInTheDocument();
   });
 
   it('shows source icons', () => {
@@ -66,7 +69,7 @@ describe('MessageList Component', () => {
     const sourceIcons = container.querySelectorAll('[title]');
     const hasSourceIcons = Array.from(sourceIcons).some(icon =>
       icon.getAttribute('title')?.includes(CaseSource.NEWSLETTER) ||
-      icon.getAttribute('title')?.includes(CaseSource.WEB)
+      icon.getAttribute('title')?.includes(CaseSource.WEB_FORM)
     );
     expect(hasSourceIcons || sourceIcons.length > 0).toBeTruthy();
   });
@@ -82,7 +85,8 @@ describe('MessageList Component', () => {
       />
     );
 
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    // The UI uses Radix checkboxes, which render as button[role="checkbox"].
+    const checkboxes = container.querySelectorAll('[role="checkbox"]');
     // One for "select all" header + one for each case
     expect(checkboxes.length).toBe(mockCases.length + 1);
   });
@@ -99,7 +103,7 @@ describe('MessageList Component', () => {
       />
     );
 
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const checkboxes = container.querySelectorAll('[role="checkbox"]');
     fireEvent.click(checkboxes[0]); // First checkbox is "Select All"
 
     expect(onSelectAll).toHaveBeenCalled();
@@ -259,7 +263,7 @@ describe('MessageList Component', () => {
       />
     );
 
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const checkboxes = container.querySelectorAll('[role="checkbox"]');
     fireEvent.click(checkboxes[1]); // Second checkbox (first case)
 
     expect(onSelect).toHaveBeenCalledWith('1', true);
@@ -278,7 +282,7 @@ describe('MessageList Component', () => {
       />
     );
 
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+    const checkboxes = container.querySelectorAll('[role="checkbox"]');
     fireEvent.click(checkboxes[1]);
 
     expect(onCaseClick).not.toHaveBeenCalled();

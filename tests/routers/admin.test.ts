@@ -88,7 +88,7 @@ describe('adminRouter', () => {
     });
 
     it('should create department with defaults', async () => {
-      const department = factories.createTestDepartment();
+      const department = factories.createTestDepartment({ name: 'Support', slug: 'support' });
 
       ctx.prisma.department.findFirst.mockResolvedValue(null);
       ctx.prisma.department.create.mockResolvedValue(department);
@@ -120,7 +120,7 @@ describe('adminRouter', () => {
           slug: 'support',
           topicTags: [],
         })
-      ).rejects.toThrow('CONFLICT');
+      ).rejects.toMatchObject({ code: 'CONFLICT' });
     });
 
     it('should create audit log entry', async () => {
@@ -194,7 +194,7 @@ describe('adminRouter', () => {
           name: 'User',
           role: 'AGENT',
         })
-      ).rejects.toThrow('CONFLICT');
+      ).rejects.toMatchObject({ code: 'CONFLICT' });
     });
 
     it('should queue invite email', async () => {
@@ -308,7 +308,7 @@ describe('adminRouter', () => {
           resolutionHours: 72,
           escalationChain: {},
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
 
     it('should create audit log entry', async () => {
@@ -359,14 +359,17 @@ describe('adminRouter', () => {
       ctx.prisma.webhook.create.mockResolvedValue(webhook);
       ctx.prisma.auditLog.create.mockResolvedValue({});
 
-      const result = await caller.createWebhook({
+      await caller.createWebhook({
         name: 'Test Webhook',
         url: 'https://example.com/webhook',
         events: ['case.created'],
       });
 
-      expect(result.secret).toBeDefined();
-      expect(result.secret).toHaveLength(32);
+      // The router generates a secure 32-char secret via nanoid(32) and
+      // persists it. Assert on the value passed to prisma.webhook.create.
+      const createArg = ctx.prisma.webhook.create.mock.calls[0][0];
+      expect(createArg.data.secret).toBeDefined();
+      expect(createArg.data.secret).toHaveLength(32);
     });
 
     it('should create audit log entry', async () => {
@@ -441,7 +444,7 @@ describe('adminRouter', () => {
 
       await expect(
         caller.deleteWebhook({ id: 'nonexistent' })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -600,7 +603,7 @@ describe('adminRouter', () => {
           constituentId: 'nonexistent',
           action: 'export',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 });

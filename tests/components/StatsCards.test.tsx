@@ -75,8 +75,11 @@ describe('StatsCards Component', () => {
       />
     );
 
+    // openCases, dueToday and newsletterFlags render as a bare "0"; the
+    // average response time is formatted with one decimal and a unit ("0.0h").
     const zeros = screen.getAllByText('0');
-    expect(zeros.length).toBeGreaterThanOrEqual(4);
+    expect(zeros.length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByText('0.0h')).toBeInTheDocument();
   });
 
   it('formats avgResponseTime to 1 decimal place', () => {

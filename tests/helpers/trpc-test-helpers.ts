@@ -54,108 +54,65 @@ export function createMockContext(overrides: Partial<MockContext> = {}): MockCon
   return defaultContext;
 }
 
-export function createMockPrisma() {
+// Every Prisma delegate method, as a fresh mock. Listing them all means tests can
+// call `.mockResolvedValue` / `.mockImplementation` on any of them without the
+// mock blowing up with "is not a function".
+function createModelMock() {
   return {
-    user: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-    },
-    case: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-      updateMany: vi.fn(),
-    },
-    constituent: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-      upsert: vi.fn(),
-    },
-    department: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-    },
-    template: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    kbArticle: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-    },
-    caseMessage: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      updateMany: vi.fn(),
-    },
-    auditLog: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      count: vi.fn(),
-    },
-    city: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      count: vi.fn(),
-    },
-    slaConfig: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      upsert: vi.fn(),
-    },
-    webhook: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    newsletterItem: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      count: vi.fn(),
-    },
-    newsletterSignal: {
-      findFirst: vi.fn(),
-      findMany: vi.fn(),
-      count: vi.fn(),
-    },
+    findUnique: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
+    findFirst: vi.fn(),
+    findFirstOrThrow: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    createMany: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+    upsert: vi.fn(),
+    delete: vi.fn(),
+    deleteMany: vi.fn(),
+    count: vi.fn(),
+    aggregate: vi.fn(),
+    groupBy: vi.fn(),
   };
+}
+
+export function createMockPrisma() {
+  const models = [
+    'city',
+    'user',
+    'department',
+    'constituent',
+    'case',
+    'caseMessage',
+    'newsletterItem',
+    'newsletterSignal',
+    'template',
+    'slaConfig',
+    'kbArticle',
+    'webhook',
+    'auditLog',
+  ] as const;
+
+  const prisma: Record<string, ReturnType<typeof createModelMock>> & {
+    $transaction?: any;
+    $queryRaw?: any;
+    $executeRaw?: any;
+  } = {} as any;
+
+  for (const model of models) {
+    prisma[model] = createModelMock();
+  }
+
+  // Support both array form `$transaction([...])` and callback form
+  // `$transaction(async (tx) => {...})`, passing the same mock as the tx client.
+  prisma.$transaction = vi.fn((arg: any) =>
+    typeof arg === 'function' ? arg(prisma) : Promise.all(arg)
+  );
+  prisma.$queryRaw = vi.fn();
+  prisma.$executeRaw = vi.fn();
+
+  return prisma;
 }
 
 export function createMockRedis() {
@@ -214,7 +171,7 @@ export function createTestDataFactories(): TestDataFactories {
       description: 'Test case description',
       priority: CasePriority.NORMAL,
       status: CaseStatus.NEW,
-      source: CaseSource.WEB,
+      source: CaseSource.WEB_FORM,
       assignedToId: null,
       slaDeadline: new Date(Date.now() + 48 * 60 * 60 * 1000),
       slaBreached: false,

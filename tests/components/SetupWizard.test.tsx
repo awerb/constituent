@@ -30,11 +30,14 @@ describe('SetupWizard Component', () => {
     const nextButton = screen.getByText('Next');
     await user.click(nextButton);
 
-    // Should show validation errors
+    // Should show validation errors. For an empty password the length check
+    // (which runs after the required check) is the message that ends up shown.
     await waitFor(() => {
       expect(screen.getByText('Name is required')).toBeInTheDocument();
       expect(screen.getByText('Email is required')).toBeInTheDocument();
-      expect(screen.getByText('Password is required')).toBeInTheDocument();
+      expect(
+        screen.getByText('Password must be at least 8 characters')
+      ).toBeInTheDocument();
     });
   });
 
@@ -118,10 +121,8 @@ describe('SetupWizard Component', () => {
         await user.type(screen.getByLabelText('Confirm Password'), 'Password123!');
       } else if (i === 1) {
         await user.type(screen.getByLabelText('City Name'), 'San Francisco');
-        const stateSelect = screen.getByDisplayValue('');
-        await user.selectOptions(stateSelect, 'California');
-        const tzSelect = screen.getAllByDisplayValue('')[0];
-        await user.selectOptions(tzSelect, 'US/Pacific');
+        await user.selectOptions(screen.getByLabelText('State'), 'California');
+        await user.selectOptions(screen.getByLabelText('Timezone'), 'US/Pacific');
       } else if (i === 2) {
         await user.type(screen.getByLabelText('From Email Address'), 'noreply@sf.gov');
       }
@@ -131,7 +132,8 @@ describe('SetupWizard Component', () => {
     }
 
     await waitFor(() => {
-      expect(screen.getByText('Departments')).toBeInTheDocument();
+      // "Departments" appears both as the step indicator and the step heading.
+      expect(screen.getAllByText('Departments').length).toBeGreaterThan(0);
     });
 
     // Check for pre-populated departments

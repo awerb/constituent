@@ -38,10 +38,16 @@ function verifySignature(
     .update(body)
     .digest("hex");
 
-  return crypto.timingSafeEqual(
-    Buffer.from(computed),
-    Buffer.from(signature)
-  );
+  const computedBuffer = Buffer.from(computed);
+  const signatureBuffer = Buffer.from(signature);
+
+  // timingSafeEqual throws if the buffers differ in length; a length mismatch
+  // simply means the signature is invalid, so treat it as a non-match.
+  if (computedBuffer.length !== signatureBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(computedBuffer, signatureBuffer);
 }
 
 /**

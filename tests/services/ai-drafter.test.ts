@@ -8,7 +8,29 @@ import {
 import { prisma } from "@/lib/db";
 import * as aiModule from "@/lib/ai";
 
-vi.mock("@/lib/db");
+vi.mock("@/lib/db", () => {
+  const modelMethods = [
+    "findUnique", "findUniqueOrThrow", "findFirst", "findFirstOrThrow",
+    "findMany", "create", "createMany", "update", "updateMany", "upsert",
+    "delete", "deleteMany", "count", "aggregate", "groupBy",
+  ];
+  const models = [
+    "city", "user", "department", "constituent", "case", "caseMessage",
+    "newsletterItem", "newsletterSignal", "signal", "template", "slaConfig",
+    "kbArticle", "webhook", "auditLog", "privacyRequest", "notification",
+  ];
+  const db = {};
+  for (const m of models) {
+    db[m] = {};
+    for (const fn of modelMethods) db[m][fn] = vi.fn();
+  }
+  db.$transaction = vi.fn((arg) =>
+    typeof arg === "function" ? arg(db) : Promise.all(arg)
+  );
+  db.$queryRaw = vi.fn();
+  db.$executeRaw = vi.fn();
+  return { prisma: db };
+});
 vi.mock("@/lib/ai");
 
 describe("AI Drafter Service", () => {
@@ -496,7 +518,7 @@ describe("AI Drafter Service", () => {
       mockAIClient.draft.mockResolvedValue("Response");
       mockAIClient.detectLanguage.mockResolvedValue("en");
       vi.mocked(prisma.city).findUniqueOrThrow.mockResolvedValue(mockCity);
-      vi.miced(prisma.template).findFirst.mockResolvedValue(null);
+      vi.mocked(prisma.template).findFirst.mockResolvedValue(null);
       vi.mocked(prisma.case).findUniqueOrThrow.mockResolvedValue(mockCase);
     });
 

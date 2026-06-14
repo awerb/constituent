@@ -40,10 +40,13 @@ export function calculateSlaDeadline(
   const [startHour, startMin] = config.businessHoursStart.split(":").map(Number);
   const [endHour, endMin] = config.businessHoursEnd.split(":").map(Number);
 
-  // If we're outside business hours, start from next business day
+  // If we're outside business hours, start from next business day.
+  // NOTE: currentTime is already zoned, so check it directly rather than via
+  // isWithinBusinessHours (which expects a UTC instant and would re-zone it,
+  // double-applying the timezone offset).
   const dayOfWeek = getDayOfWeekString(currentTime);
   if (
-    !isWithinBusinessHours(currentTime, config) ||
+    !isZonedTimeWithinBusinessHours(currentTime, config) ||
     !businessDays.has(dayOfWeek)
   ) {
     currentTime = getNextBusinessDayStart(currentTime, config);
@@ -134,10 +137,21 @@ export function calculateSlaDeadline(
  * Check if a time is within business hours
  */
 export function isWithinBusinessHours(time: Date, config: SLAConfig): boolean {
-  const timezone = config.timezone;
-  const businessDays = new Set(config.businessDays);
+  const zonedTime = utcToZonedTime(time, config.timezone);
+  return isZonedTimeWithinBusinessHours(zonedTime, config);
+}
 
-  const zonedTime = utcToZonedTime(time, timezone);
+/**
+ * Business-hours check for a time that has ALREADY been converted to the
+ * config timezone (its local/UTC fields hold the zone's wall-clock time).
+ * Shared by isWithinBusinessHours and calculateSlaDeadline to avoid
+ * double-converting an already-zoned time.
+ */
+function isZonedTimeWithinBusinessHours(
+  zonedTime: Date,
+  config: SLAConfig
+): boolean {
+  const businessDays = new Set(config.businessDays);
   const dayOfWeek = getDayOfWeekString(zonedTime);
 
   // Check if it's a business day
@@ -166,8 +180,10 @@ export function isWithinBusinessHours(time: Date, config: SLAConfig): boolean {
     0
   );
 
+  // Start of the business day is inclusive: a time exactly at the opening
+  // hour is within business hours. End remains exclusive.
   return (
-    isAfter(zonedTime, businessDayStart) &&
+    !isBefore(zonedTime, businessDayStart) &&
     isBefore(zonedTime, businessDayEnd)
   );
 }

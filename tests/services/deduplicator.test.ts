@@ -6,7 +6,29 @@ import {
 } from "@/server/services/deduplicator";
 import { prisma } from "@/lib/db";
 
-vi.mock("@/lib/db");
+vi.mock("@/lib/db", () => {
+  const modelMethods = [
+    "findUnique", "findUniqueOrThrow", "findFirst", "findFirstOrThrow",
+    "findMany", "create", "createMany", "update", "updateMany", "upsert",
+    "delete", "deleteMany", "count", "aggregate", "groupBy",
+  ];
+  const models = [
+    "city", "user", "department", "constituent", "case", "caseMessage",
+    "newsletterItem", "newsletterSignal", "signal", "template", "slaConfig",
+    "kbArticle", "webhook", "auditLog", "privacyRequest", "notification",
+  ];
+  const db: any = {};
+  for (const m of models) {
+    db[m] = {};
+    for (const fn of modelMethods) db[m][fn] = vi.fn();
+  }
+  db.$transaction = vi.fn((arg: any) =>
+    typeof arg === "function" ? arg(db) : Promise.all(arg)
+  );
+  db.$queryRaw = vi.fn();
+  db.$executeRaw = vi.fn();
+  return { prisma: db };
+});
 
 describe("Deduplicator Service", () => {
   const mockConstituent = {
@@ -330,7 +352,7 @@ describe("Deduplicator Service", () => {
     it("should deactivate the duplicate record by deleting it", async () => {
       await mergeConstituents("const-1", "const-2");
 
-      expect(prisma.constituent).delete.toHaveBeenCalledWith({
+      expect(prisma.constituent.delete).toHaveBeenCalledWith({
         where: { id: "const-2" },
       });
     });
@@ -406,10 +428,11 @@ describe("Deduplicator Service", () => {
 
     it("should fill missing address from duplicate", async () => {
       const primaryNoAddress = { ...mockPrimary, address: null };
+      const dupWithAddress = { ...mockDuplicate, address: "456 Oak Ave" };
       vi.mocked(prisma.constituent).findUniqueOrThrow.mockImplementation(
         async (query: any) => {
           if (query.where.id === "const-1") return primaryNoAddress;
-          if (query.where.id === "const-2") return mockDuplicate;
+          if (query.where.id === "const-2") return dupWithAddress;
         }
       );
 
@@ -418,7 +441,7 @@ describe("Deduplicator Service", () => {
       expect(prisma.constituent.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            address: mockDuplicate.address || undefined,
+            address: "456 Oak Ave",
           }),
         })
       );
@@ -444,6 +467,24 @@ describe("Deduplicator Service", () => {
   });
 
   describe("mergeConstituents - Edge Cases", () => {
+    const mockPrimary = {
+      id: "const-1",
+      email: "john@example.com",
+      name: "John Smith",
+      phone: "555-1234",
+      address: "123 Main St",
+      metadata: { source: "web" },
+    };
+
+    const mockDuplicate = {
+      id: "const-2",
+      email: "john.smith@example.com",
+      name: "John Smith",
+      phone: "555-1234",
+      address: null,
+      metadata: { source: "phone" },
+    };
+
     it("should handle constituent with no cases", async () => {
       vi.mocked(prisma.constituent).findUniqueOrThrow.mockImplementation(
         async (query: any) => {
@@ -568,8 +609,10 @@ describe("Deduplicator Service", () => {
     });
 
     it("should score partial email match moderately", async () => {
+      // A partial match is when the duplicate email contains the search email
+      // as a substring (e.g. an alias prefix). The implementation scores this 50.
       vi.mocked(prisma.constituent).findMany.mockResolvedValue([
-        { ...mockConstituent, email: "johnsmith@example.com" },
+        { ...mockConstituent, email: "alias.john@example.com" },
       ]);
 
       const result = await findDuplicates(
@@ -579,9 +622,9 @@ describe("Deduplicator Service", () => {
         undefined
       );
 
-      if (result.length > 0) {
-        expect(result[0].similarity).toBeGreaterThan(0);
-      }
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0].similarity).toBeGreaterThan(0);
+      expect(result[0].similarity).toBeLessThan(100);
     });
 
     it("should score phone match highly", async () => {

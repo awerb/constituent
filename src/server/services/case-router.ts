@@ -41,7 +41,7 @@ export async function routeCase(cityId: string, topicTags: string[]): Promise<Ro
       const score = matches.length;
 
       console.log(
-        `Department ${dept.name} scored ${score} (tags: ${dept.topicTags.join(", ")})`
+        `Department ${dept.name} scored ${score} (tags: ${(dept.topicTags || []).join(", ")})`
       );
 
       if (score > bestScore) {

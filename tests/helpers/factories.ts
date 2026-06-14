@@ -83,7 +83,7 @@ export function createTestCase(overrides?: any) {
     description: overrides?.description || 'This is a test case',
     status: overrides?.status || CaseStatus.NEW,
     priority: overrides?.priority || CasePriority.NORMAL,
-    source: overrides?.source || CaseSource.WEB,
+    source: overrides?.source || CaseSource.WEB_FORM,
     departmentId: overrides?.departmentId || generateId(),
     assignedToId: overrides?.assignedToId || null,
     slaDeadline: overrides?.slaDeadline || sevenDaysFromNow,

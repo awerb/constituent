@@ -498,9 +498,9 @@ describe("Signal Processing Service", () => {
           constituentId: "constituent-case",
           subject: expect.stringContaining("Newsletter Flag"),
           status: "NEW",
+          source: "NEWSLETTER_FLAG",
           departmentId: "dept-1",
           newsletterItemId: "newsletter-case",
-          signalType: undefined,
         }),
       });
 

@@ -10,9 +10,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# lint, typecheck, and build are hard gates (green). `test` is still
-# `continue-on-error: true` while the failing-test baseline is brought up;
-# remove that once the suite passes.
+# lint, typecheck, test, and build are all hard gates (green).
 
 jobs:
   build-and-test:
@@ -49,7 +47,6 @@ jobs:
 
       - name: Test
         run: npm test
-        continue-on-error: true
 
       - name: Build
         run: npm run build

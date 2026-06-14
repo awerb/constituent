@@ -212,7 +212,7 @@ describe('casesRouter', () => {
     it('should throw NOT_FOUND for nonexistent case', async () => {
       ctx.prisma.case.findFirst.mockResolvedValue(null);
 
-      await expect(caller.getById({ id: 'nonexistent' })).rejects.toThrow('NOT_FOUND');
+      await expect(caller.getById({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -233,7 +233,7 @@ describe('casesRouter', () => {
         constituentName: 'Test Person',
         subject: 'Test Subject',
         description: 'Test Description',
-        source: CaseSource.WEB,
+        source: CaseSource.WEB_FORM,
         departmentId: department.id,
       });
 
@@ -270,7 +270,7 @@ describe('casesRouter', () => {
         constituentEmail: 'existing@example.com',
         subject: 'Subject',
         description: 'Description',
-        source: CaseSource.WEB,
+        source: CaseSource.WEB_FORM,
         departmentId: department.id,
       });
 
@@ -292,14 +292,14 @@ describe('casesRouter', () => {
         constituentEmail: 'test@example.com',
         subject: 'Subject',
         description: 'Description',
-        source: CaseSource.WEB,
+        source: CaseSource.WEB_FORM,
         departmentId: department.id,
       });
 
       expect(ctx.prisma.case.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            referenceNumber: expect.stringMatching(/^\d{4}-[A-Z0-9]{8}$/),
+            referenceNumber: expect.stringMatching(/^\d{4}-[A-Z0-9_-]{8}$/),
           }),
         })
       );
@@ -323,7 +323,7 @@ describe('casesRouter', () => {
         constituentEmail: 'test@example.com',
         subject: 'Subject',
         description: 'Description',
-        source: CaseSource.WEB,
+        source: CaseSource.WEB_FORM,
         departmentId: department.id,
       });
 
@@ -351,7 +351,7 @@ describe('casesRouter', () => {
         constituentEmail: 'test@example.com',
         subject: 'Subject',
         description: 'Description',
-        source: CaseSource.WEB,
+        source: CaseSource.WEB_FORM,
         departmentId: department.id,
       });
 
@@ -376,7 +376,7 @@ describe('casesRouter', () => {
           constituentEmail: 'test@example.com',
           subject: 'Subject',
           description: 'Description',
-          source: CaseSource.WEB,
+          source: CaseSource.WEB_FORM,
           departmentId: 'nonexistent',
         })
       ).rejects.toThrow('Department not found');
@@ -521,7 +521,7 @@ describe('casesRouter', () => {
           id: 'nonexistent',
           status: CaseStatus.ASSIGNED,
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -666,11 +666,16 @@ describe('casesRouter', () => {
           caseId: 'nonexistent',
           content: 'Test',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
   describe('merge', () => {
+    beforeEach(() => {
+      ctx.user.role = 'MANAGER';
+      caller = casesRouter.createCaller(ctx);
+    });
+
     it('should move all messages from source to target case', async () => {
       const targetCase = factories.createTestCase();
       const sourceCase = factories.createTestCase();
@@ -770,7 +775,7 @@ describe('casesRouter', () => {
           targetCaseId: 'case-1',
           sourceCaseId: 'case-2',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -867,7 +872,7 @@ describe('casesRouter', () => {
           caseIds: ['nonexistent'],
           content: 'Response',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 

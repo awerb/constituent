@@ -183,7 +183,9 @@ describe("Rate Limiter", () => {
         throw new Error("Redis unavailable");
       });
 
-      const result = await rateLimit("192.168.1.1", 10, 60000);
+      // Use a unique IP so the module-level in-memory fallback store starts
+      // fresh for this test (it persists across tests within the run).
+      const result = await rateLimit("10.99.0.1", 10, 60000);
 
       expect(result.success).toBe(true);
       expect(result.remaining).toBe(9);

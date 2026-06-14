@@ -106,7 +106,8 @@ describe('ConversationThread Component', () => {
       <ConversationThread messages={mockMessages} constituentName="John Smith" />
     );
 
-    expect(screen.getByText('John Smith')).toBeInTheDocument();
+    // John Smith authors two messages, so the name appears more than once.
+    expect(screen.getAllByText('John Smith').length).toBeGreaterThan(0);
     expect(screen.getByText('Agent Jane')).toBeInTheDocument();
   });
 

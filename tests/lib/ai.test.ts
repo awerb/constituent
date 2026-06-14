@@ -442,7 +442,7 @@ describe("AI Client Abstraction", () => {
         content: [
           {
             type: "text",
-            text: "un",
+            text: "unknown",
           },
         ],
       };

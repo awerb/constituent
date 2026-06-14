@@ -32,6 +32,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `vitest.config.ts`: corrected `setupFiles` path (`./src/test/setup.ts` -> `./tests/setup.ts`). The test suite now runs (was unable to start).
 - `tsconfig.json`: added `moduleResolution: "bundler"` (was defaulting to `classic`, breaking JSON and path-alias resolution).
 
+### Test suite (now green)
+- The full `npm test` suite passes: **834 passing, 0 failing** (was 211 failing,
+  and most of the suite couldn't even run before the config fixes). CI now runs
+  `test` as a hard gate alongside lint/typecheck/build.
+- Test-side fixes: completed the Prisma mock helpers (every delegate method +
+  a `$transaction` that supports array and callback forms), replaced incomplete
+  inline `vi.mock("@/lib/db")` factories, corrected error assertions to check
+  TRPCError `code` instead of message text, added required input fields
+  (`source` uses the real `WEB_FORM` enum), mocked Redis in rate-limit tests, and
+  aligned component tests with the rendered DOM.
+- A test-only `vitest.config.ts` alias shims `date-fns-tz` (the installed v2
+  can't load under `date-fns` v3 in vitest's ESM resolver); the app bundle still
+  uses the real package.
+- Genuine source bugs the tests surfaced were fixed (typecheck/build stay green):
+  a double timezone conversion in `lib/sla.ts`; `reports.exportCsv` ignoring the
+  `departmentId` filter; `detectLanguage`/`normalizeLanguagePreference` not
+  trimming input; a `RangeError` on length-mismatched HMAC signatures in the
+  signals API; non-unique export filenames within the same millisecond; and a
+  null-`topicTags` guard in `case-router`.
+
 ### Type baseline (now clean)
 - `npm run typecheck` passes with **0 errors** (was ~322). `npm run lint` passes
   (unused-vars downgraded to a warning). `npm run build` now type-checks and lints

@@ -19,7 +19,10 @@ describe("Reference Number Generation", () => {
   const cityId = "city-1";
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // resetAllMocks (not clearAllMocks) also drains any queued
+    // mockImplementationOnce/mockResolvedValueOnce so per-test $transaction
+    // stubs don't leak into later tests and get consumed out of order.
+    vi.resetAllMocks();
   });
 
   describe("Generates format CR-{YEAR}-{NNNNN}", () => {

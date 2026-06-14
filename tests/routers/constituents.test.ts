@@ -139,9 +139,7 @@ describe('constituentsRouter', () => {
     it('should throw NOT_FOUND for nonexistent constituent', async () => {
       ctx.prisma.constituent.findFirst.mockResolvedValue(null);
 
-      await expect(caller.getById({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.getById({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -225,7 +223,7 @@ describe('constituentsRouter', () => {
           id: 'nonexistent',
           name: 'New Name',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -285,9 +283,7 @@ describe('constituentsRouter', () => {
     it('should throw NOT_FOUND if constituent does not exist', async () => {
       ctx.prisma.constituent.findFirst.mockResolvedValue(null);
 
-      await expect(caller.requestExport({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.requestExport({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -361,7 +357,7 @@ describe('constituentsRouter', () => {
 
       await expect(
         caller.requestDeletion({ id: 'nonexistent' })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 });

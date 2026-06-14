@@ -8,7 +8,29 @@ import {
 import { prisma } from "@/lib/db";
 import nodemailer from "nodemailer";
 
-vi.mock("@/lib/db");
+vi.mock("@/lib/db", () => {
+  const modelMethods = [
+    "findUnique", "findUniqueOrThrow", "findFirst", "findFirstOrThrow",
+    "findMany", "create", "createMany", "update", "updateMany", "upsert",
+    "delete", "deleteMany", "count", "aggregate", "groupBy",
+  ];
+  const models = [
+    "city", "user", "department", "constituent", "case", "caseMessage",
+    "newsletterItem", "newsletterSignal", "signal", "template", "slaConfig",
+    "kbArticle", "webhook", "auditLog", "privacyRequest", "notification",
+  ];
+  const db = {};
+  for (const m of models) {
+    db[m] = {};
+    for (const fn of modelMethods) db[m][fn] = vi.fn();
+  }
+  db.$transaction = vi.fn((arg) =>
+    typeof arg === "function" ? arg(db) : Promise.all(arg)
+  );
+  db.$queryRaw = vi.fn();
+  db.$executeRaw = vi.fn();
+  return { prisma: db };
+});
 vi.mock("nodemailer");
 
 describe("Email Sender Service", () => {
@@ -100,7 +122,10 @@ describe("Email Sender Service", () => {
       });
 
       const call = mockTransporter.sendMail.mock.calls[0][0];
-      expect(call.html).toContain("jane@example.com");
+      // The personalized body content is preserved inside the branded template,
+      // and the message is addressed to the constituent.
+      expect(call.html).toContain("Dear Jane");
+      expect(call.to).toBe("jane@example.com");
     });
 
     it("should set correct from header", async () => {
@@ -495,15 +520,22 @@ describe("Email Sender Service", () => {
         return { messageId: "msg-123" };
       });
 
-      // Note: The actual retry logic would be in the calling code or queue
-      // This test shows the email service receives the message correctly after retry
-      await sendEmail({
+      // Note: The actual retry logic lives in the calling code or queue. This
+      // test shows the email service surfaces a transient SMTP error on the
+      // first attempt and then succeeds when the caller retries.
+      const params = {
         to: "test@example.com",
         subject: "Test",
         html: "<p>Test</p>",
-      });
+      };
 
-      expect(mockTransporter.sendMail).toHaveBeenCalled();
+      await expect(sendEmail(params)).rejects.toThrow(
+        "Temporary failure in sending mail"
+      );
+      // Caller retries; the second attempt succeeds.
+      await sendEmail(params);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledTimes(2);
     });
   });
 

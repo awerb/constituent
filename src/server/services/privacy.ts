@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { randomBytes } from "crypto";
 
 const REDACTED = "[REDACTED]";
 
@@ -122,7 +123,9 @@ export async function processExportRequest(
 
     return {
       data: exportData,
-      fileName: `constituent-data-export-${constituentId}-${Date.now()}.json`,
+      fileName: `constituent-data-export-${constituentId}-${Date.now()}-${randomBytes(
+        4
+      ).toString("hex")}.json`,
       format: "json",
     };
   } catch (error) {

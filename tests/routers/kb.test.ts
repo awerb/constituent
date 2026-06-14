@@ -152,9 +152,7 @@ describe('kbRouter', () => {
     it('should throw NOT_FOUND for nonexistent article', async () => {
       ctx.prisma.kbArticle.findFirst.mockResolvedValue(null);
 
-      await expect(caller.getById({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.getById({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -359,7 +357,7 @@ describe('kbRouter', () => {
           id: 'nonexistent',
           title: 'New Title',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -416,9 +414,7 @@ describe('kbRouter', () => {
     it('should throw NOT_FOUND for nonexistent article', async () => {
       ctx.prisma.kbArticle.findFirst.mockResolvedValue(null);
 
-      await expect(caller.incrementUseCount({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.incrementUseCount({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 });

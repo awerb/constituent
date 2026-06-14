@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   calculateSlaDeadline,
   isWithinBusinessHours,
@@ -14,14 +14,17 @@ describe("SLA Monitor Service", () => {
     timezone: "America/New_York",
   };
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe("Calculates deadline within business hours", () => {
     it("should calculate deadline 4 hours from 10am same day", () => {
       const startTime = new Date("2024-03-28T10:00:00-04:00");
       const result = calculateSlaDeadline(startTime, 4, baseConfig);
 
-      const resultHours = result.getUTCHours();
-      const resultMinutes = result.getUTCMinutes();
-      const expectedTime = new Date("2024-03-28T18:00:00-04:00");
+      // 10am + 4 business hours = 2pm same day.
+      const expectedTime = new Date("2024-03-28T14:00:00-04:00");
 
       expect(result.getTime()).toBeCloseTo(expectedTime.getTime(), -4);
     });
@@ -40,7 +43,8 @@ describe("SLA Monitor Service", () => {
       const startTime = new Date("2024-03-28T15:00:00-04:00");
       const result = calculateSlaDeadline(startTime, 4, baseConfig);
 
-      const expectedTime = new Date("2024-03-29T12:00:00-04:00");
+      // 3pm Thu: 2h until 5pm close, remaining 2h roll to Fri 9am -> 11am.
+      const expectedTime = new Date("2024-03-29T11:00:00-04:00");
       expect(result.getTime()).toBeCloseTo(expectedTime.getTime(), -4);
     });
 
@@ -48,7 +52,8 @@ describe("SLA Monitor Service", () => {
       const startTime = new Date("2024-03-28T16:00:00-04:00");
       const result = calculateSlaDeadline(startTime, 1, baseConfig);
 
-      const expectedTime = new Date("2024-03-29T10:00:00-04:00");
+      // 4pm + 1 business hour lands exactly at the 5pm business-day end.
+      const expectedTime = new Date("2024-03-28T17:00:00-04:00");
       expect(result.getTime()).toBeCloseTo(expectedTime.getTime(), -4);
     });
   });
@@ -58,7 +63,9 @@ describe("SLA Monitor Service", () => {
       const fridayTime = new Date("2024-03-29T16:00:00-04:00");
       const result = calculateSlaDeadline(fridayTime, 4, baseConfig);
 
-      const expectedTime = new Date("2024-04-01T13:00:00-04:00");
+      // Fri 4pm: 1h until 5pm close, remaining 3h skip the weekend to Mon
+      // 9am -> noon Monday.
+      const expectedTime = new Date("2024-04-01T12:00:00-04:00");
       expect(result.getTime()).toBeCloseTo(expectedTime.getTime(), -4);
     });
 
@@ -104,7 +111,10 @@ describe("SLA Monitor Service", () => {
 
   describe("Calculates remaining time correctly", () => {
     it("should calculate remaining business hours until deadline", () => {
-      const now = new Date("2024-03-28T10:00:00-04:00");
+      // getTimeRemainingInBusinessHours measures from the current time, so pin
+      // the clock to a known "now" within business hours.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-03-28T10:00:00-04:00"));
       const deadline = new Date("2024-03-28T14:00:00-04:00");
 
       const result = getTimeRemainingInBusinessHours(deadline, baseConfig);
@@ -115,7 +125,8 @@ describe("SLA Monitor Service", () => {
     });
 
     it("should handle partial hours remaining", () => {
-      const now = new Date("2024-03-28T10:30:00-04:00");
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-03-28T10:30:00-04:00"));
       const deadline = new Date("2024-03-28T12:45:00-04:00");
 
       const result = getTimeRemainingInBusinessHours(deadline, baseConfig);
@@ -126,7 +137,8 @@ describe("SLA Monitor Service", () => {
     });
 
     it("should return 0 when deadline is now", () => {
-      const now = new Date("2024-03-28T10:00:00-04:00");
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2024-03-28T10:00:00-04:00"));
       const deadline = new Date("2024-03-28T10:00:00-04:00");
 
       const result = getTimeRemainingInBusinessHours(deadline, baseConfig);
@@ -172,8 +184,10 @@ describe("SLA Monitor Service", () => {
       const mondayTime = new Date("2024-03-25T09:00:00-04:00");
       const result = calculateSlaDeadline(mondayTime, 8, customConfig);
 
-      const nextMondayTime = new Date("2024-04-01T09:00:00-04:00");
-      expect(result.getTime()).toBeCloseTo(nextMondayTime.getTime(), -4);
+      // 8 business hours fit entirely within Monday's 9am-5pm window, so the
+      // deadline is 5pm the same Monday.
+      const expectedTime = new Date("2024-03-25T17:00:00-04:00");
+      expect(result.getTime()).toBeCloseTo(expectedTime.getTime(), -4);
     });
   });
 

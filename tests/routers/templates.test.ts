@@ -132,9 +132,7 @@ describe('templatesRouter', () => {
     it('should throw NOT_FOUND for nonexistent template', async () => {
       ctx.prisma.template.findFirst.mockResolvedValue(null);
 
-      await expect(caller.getById({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.getById({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -280,9 +278,7 @@ describe('templatesRouter', () => {
       ctx.user.role = Role.MANAGER;
       ctx.prisma.template.findFirst.mockResolvedValue(null);
 
-      await expect(caller.approve({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.approve({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -333,9 +329,7 @@ describe('templatesRouter', () => {
     it('should throw NOT_FOUND for nonexistent template', async () => {
       ctx.prisma.template.findFirst.mockResolvedValue(null);
 
-      await expect(caller.archive({ id: 'nonexistent' })).rejects.toThrow(
-        'NOT_FOUND'
-      );
+      await expect(caller.archive({ id: 'nonexistent' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -421,7 +415,7 @@ describe('templatesRouter', () => {
           templateId: 'nonexistent',
           variables: {},
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 
@@ -485,7 +479,7 @@ describe('templatesRouter', () => {
           id: 'nonexistent',
           title: 'New Title',
         })
-      ).rejects.toThrow('NOT_FOUND');
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 });

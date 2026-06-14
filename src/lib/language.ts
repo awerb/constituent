@@ -28,9 +28,11 @@ export async function detectLanguage(text: string): Promise<string> {
     return "en";
   }
 
+  const trimmedText = text.trim();
+
   try {
     const aiClient = getAIClient();
-    const detectedLanguage = await aiClient.detectLanguage(text);
+    const detectedLanguage = await aiClient.detectLanguage(trimmedText);
 
     // Validate that it's a supported language
     if (detectedLanguage in SUPPORTED_LANGUAGES) {
@@ -83,7 +85,7 @@ export function isSupportedLanguage(code: string): code is keyof typeof SUPPORTE
  * Returns language code or null if not found
  */
 export function normalizeLanguagePreference(preference: string): string | null {
-  const lowerPref = preference.toLowerCase();
+  const lowerPref = preference.trim().toLowerCase();
 
   // Check if it's already a code
   if (lowerPref in SUPPORTED_LANGUAGES) {

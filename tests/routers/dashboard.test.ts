@@ -84,7 +84,7 @@ describe('dashboardRouter', () => {
 
       const result = await caller.getStats();
 
-      expect(result.newsletterFlagsThisWeek).toEqual([]);
+      expect(result.newsletterFlagsThisWeek).toBe(7);
       expect(ctx.prisma.newsletterSignal.count).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({

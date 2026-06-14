@@ -86,7 +86,7 @@ describe('DistrictSummary Component', () => {
     );
 
     // Should render trend indicators
-    const cards = container.querySelectorAll('[class*="Card"]');
+    const cards = container.querySelectorAll('.text-card-foreground');
     expect(cards.length).toBeGreaterThan(0);
   });
 
@@ -102,9 +102,9 @@ describe('DistrictSummary Component', () => {
       />
     );
 
-    // Check for trend labels (the component renders them dynamically)
-    const trendLabels = screen.queryByText(/from last week|No change|Active and pending|hours/);
-    expect(trendLabels || screen.getByText('Flagged Issues')).toBeInTheDocument();
+    // Check for trend labels (the component renders one per card).
+    const trendLabels = screen.queryAllByText(/from last week|No change|Active and pending|hours/);
+    expect(trendLabels.length).toBeGreaterThan(0);
   });
 
   it('renders cards in responsive grid', () => {
@@ -141,7 +141,7 @@ describe('DistrictSummary Component', () => {
     );
 
     // The component should render all cards with trend colors
-    const cards = container.querySelectorAll('[class*="Card"]');
+    const cards = container.querySelectorAll('.text-card-foreground');
     expect(cards.length).toBe(4);
   });
 
@@ -157,7 +157,7 @@ describe('DistrictSummary Component', () => {
       />
     );
 
-    const cards = container.querySelectorAll('[class*="Card"]');
+    const cards = container.querySelectorAll('.text-card-foreground');
     expect(cards.length).toBe(4);
   });
 

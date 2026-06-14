@@ -14,9 +14,30 @@ import { prisma } from "@/lib/db";
 import { webhookQueue } from "@/lib/queue";
 import crypto from "crypto";
 
-vi.mock("@/lib/db");
+vi.mock("@/lib/db", () => {
+  const modelMethods = [
+    "findUnique", "findUniqueOrThrow", "findFirst", "findFirstOrThrow",
+    "findMany", "create", "createMany", "update", "updateMany", "upsert",
+    "delete", "deleteMany", "count", "aggregate", "groupBy",
+  ];
+  const models = [
+    "city", "user", "department", "constituent", "case", "caseMessage",
+    "newsletterItem", "newsletterSignal", "signal", "template", "slaConfig",
+    "kbArticle", "webhook", "auditLog", "privacyRequest", "notification",
+  ];
+  const db = {};
+  for (const m of models) {
+    db[m] = {};
+    for (const fn of modelMethods) db[m][fn] = vi.fn();
+  }
+  db.$transaction = vi.fn((arg) =>
+    typeof arg === "function" ? arg(db) : Promise.all(arg)
+  );
+  db.$queryRaw = vi.fn();
+  db.$executeRaw = vi.fn();
+  return { prisma: db };
+});
 vi.mock("@/lib/queue");
-vi.mock("node:crypto");
 
 global.fetch = vi.fn();
 
@@ -177,13 +198,18 @@ describe("Webhook Dispatcher Service", () => {
     });
 
     it("should skip inactive webhooks", async () => {
-      const inactiveWebhook = { ...mockWebhook, isActive: false };
-      vi.mocked(prisma.webhook).findMany.mockResolvedValue([
-        inactiveWebhook,
-      ]);
+      // Inactive webhooks are excluded at the database query level. Verify the
+      // dispatcher only queries for active webhooks (isActive: true), so the DB
+      // never returns inactive ones to queue.
+      vi.mocked(prisma.webhook).findMany.mockResolvedValue([]);
 
       await dispatchWebhook("city-1", "case.created", mockPayload);
 
+      expect(prisma.webhook.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ isActive: true }),
+        })
+      );
       expect(webhookQueue.add).not.toHaveBeenCalled();
     });
 
