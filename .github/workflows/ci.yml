@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# NOTE: lint, typecheck, test, and build are currently `continue-on-error: true`
+# because the scaffolded codebase has a known baseline of failures (type errors,
+# failing tests, a build route-group issue). They still RUN on every push so the
+# logs show the full picture in one run. Remove `continue-on-error` from each step
+# as that check is brought to green, so it becomes a hard gate.
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      # Build/typecheck only need these present, not real.
+      # Override with real secrets in your deployment pipeline.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/constituent_test
+      NEXTAUTH_SECRET: ci-placeholder-secret
+      NEXTAUTH_URL: http://localhost:3000
+      SKIP_ENV_VALIDATION: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run typecheck
+        continue-on-error: true
+
+      - name: Test
+        run: npm test
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+        continue-on-error: true

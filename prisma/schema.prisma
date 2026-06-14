@@ -120,7 +120,6 @@ model Constituent {
   city               City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
   cases              Case[]
   newsletterSignals  NewsletterSignal[]
-  caseMessages       CaseMessage[]
 
   @@unique([cityId, email])
   @@index([cityId])

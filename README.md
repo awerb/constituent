@@ -6,7 +6,7 @@
 [![Built with Next.js](https://img.shields.io/badge/Built%20with-Next.js%2015-black?style=flat-square)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?style=flat-square)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square)](https://www.postgresql.org/)
-[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen?style=flat-square)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-0.1.0-brightgreen?style=flat-square)](./CHANGELOG.md)
 
 <!-- TODO: Add a hero screenshot or GIF of the staff dashboard here -->
 <!-- Example: ![Constituent Response Dashboard](./docs/assets/dashboard-screenshot.png) -->
@@ -259,8 +259,6 @@ Built on proven technology used by thousands of organizations. No experimental f
 | [ADMIN-GUIDE.md](./docs/ADMIN-GUIDE.md) | First-time setup, users, departments, SLAs | 30 min |
 | [SECURITY.md](./docs/SECURITY.md) | Authentication, authorization, audit logging, compliance | 25 min |
 | [MONITORING.md](./docs/MONITORING.md) | Health checks, logging, alerting, troubleshooting | 15 min |
-
-<!-- Note: Create docs/MONITORING.md if it doesn't exist yet -->
 
 ### For City Staff & Response Teams
 
