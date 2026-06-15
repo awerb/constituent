@@ -804,7 +804,7 @@ Thank you for helping keep our streets safe!`,
       name: "Case Status Updates",
       url: "https://example.com/webhooks/cases",
       events: ["case.created", "case.updated", "case.resolved", "case.closed"],
-      secret: "webhook-secret-key-12345",
+      secret: process.env.SEED_WEBHOOK_SECRET || "webhook-secret-key-12345",
       isActive: true,
     },
   });
